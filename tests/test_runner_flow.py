@@ -1,24 +1,12 @@
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, Union
 
+import pytest
 
-def place_echo_args(file_path: Path) -> str:
-    source = 'D:/Coding/echo-args/build/Debug/echo_args.exe'
-
-    ext = ''
-    if sys.platform == 'win32':
-        ext = '.exe'
-
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    dst = Path(file_path).with_suffix(ext)
-    shutil.copy(src=source, dst=dst)
-
-    return str(dst).lower().replace('\\', '/')
-
+from .test_utllities import place_echo_args
 
 CmdlineArg = Union[str, os.PathLike]
 
@@ -36,10 +24,17 @@ def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.Pat
         [sys.executable, str(runner), *map(str, args)],
         cwd=cwd,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         encoding='utf-8'
     )
 
-    return cp.stdout.lower().replace('\\', '/').splitlines(keepends=False)
+    assert cp.stderr == ''
+
+    actual_args = cp.stdout.splitlines(keepends=False)
+    return [
+        actual_args[0].lower().replace('\\', '/'),
+        *actual_args[1:],
+    ]
 
 
 def test_runner_flow(tmpdir: Path):
@@ -55,3 +50,55 @@ def test_runner_flow(tmpdir: Path):
         '-append', 'arg1 arg2'
     ]
 
+
+def assert_arg_set_in_cmdline(arg_set: list[str], cmdline: list[str]):
+    if len(arg_set) == 1:
+        assert arg_set[0] in cmdline
+    else:
+        leader = arg_set[0]
+        assert leader in cmdline
+        idx = cmdline.index(leader)
+        assert cmdline[idx:idx + len(arg_set)] == arg_set
+
+
+@pytest.mark.parametrize(('runner_args', 'qemu_args'), [
+    (['--halted'], [['-S']]),
+    (['--debug'], [['-s']]),
+    (['--debug', '--debug-listen', 'abc'], [['-gdb', 'abc']]),
+])
+def test_builtin_args(tmpdir: Path, runner_args: list[str], qemu_args: list[list[str]]):
+    place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
+
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)
+    cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', *runner_args, 'abc.elf', 'arg1', 'arg2')
+
+    for arg_set in qemu_args:
+        assert_arg_set_in_cmdline(arg_set, cmdline)
+
+
+def test_debug_listen_no_debug(tmpdir: Path):
+    place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
+
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)
+    cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', '--debug-listen', 'MARK-DEBUG', 'abc.elf', 'arg1', 'arg2')
+
+    assert 'MARK-DEBUG' not in cmdline
+
+
+def test_layers_are_embbedded_in_runner(tmpdir: Path):
+    place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
+
+    with open(tmpdir / 'my-layer.ini', 'w') as f:
+        f.write("""
+        [device:test_id]
+        @=test_device
+        addr=12
+        """)
+
+    run_make_runner('-l', 'virt-cortex-m.ini', 'my-layer.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)
+
+    os.unlink(tmpdir / 'my-layer.ini')
+
+    cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
+
+    assert_arg_set_in_cmdline(['-device', 'test_device,addr=12,id=test_id'], cmdline)

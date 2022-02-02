@@ -6,6 +6,8 @@ from importlib import resources
 from importlib.abc import Traversable
 from pathlib import Path
 
+from qemu_runner.layer import load_layer
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -28,13 +30,29 @@ def copy_directory(root: Traversable, archive: zipfile.ZipFile, subdir: Path) ->
             copy_directory(item, archive, subdir / item.name)
 
 
+def copy_layer(layer: str, archive: zipfile.ZipFile, archive_file: str) -> None:
+    layer_content = load_layer(
+        layer,
+        packages=['qemu_runner']
+    )
+    with archive.open(archive_file, 'w') as f:
+        f.write(layer_content.encode('utf-8'))
+
+
 def main(args: argparse.Namespace):
     with zipfile.ZipFile(args.output, mode='w') as archive:
         copy_directory(resources.files('qemu_runner'), archive, Path('qemu_runner'))
+
+        with archive.open('embedded_layers/__init__.py', 'w'):
+            pass
+
+        for i, layer in enumerate(args.layers):
+            copy_layer(layer, archive, f'embedded_layers/layers/{i}.ini')
+
         with archive.open('__main__.py', 'w') as f:
             main_template = pkgutil.get_data('qemu_runner.make_runner', 'main.py.in').decode('utf-8')
             f.write(main_template.format(
-                layers=args.layers
+                embedded_layers=[f'{i}.ini' for i in range(0, len(args.layers))]
             ).encode('utf-8'))
 
 

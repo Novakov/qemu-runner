@@ -6,11 +6,11 @@ from qemu_runner import load_base_def_from_layers, make_arg_parser, build_full_d
 from qemu_runner.layer import load_layer
 
 
-def build_qemu_command_line(layers: list[str], args: list[str]) -> list[str]:
+def build_qemu_command_line(embdedded_layers: list[str], args: list[str]) -> list[str]:
     layer_contents = [StringIO(load_layer(
         layer,
-        packages=['qemu_runner']
-    )) for layer in layers]
+        packages=['embedded_layers']
+    )) for layer in embdedded_layers]
     base_def = load_base_def_from_layers(layer_contents)
     arg_parser = make_arg_parser(base_def)
     args = arg_parser.parse_args(args)

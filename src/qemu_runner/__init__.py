@@ -174,6 +174,10 @@ def make_arg_parser(base_definition: Any) -> argparse.ArgumentParser:
             if isinstance(v, ProvidedValue):
                 parser.add_argument(f'--{v.name}', default=v.default, dest=v.name, type=v.cast_to)
 
+    parser.add_argument('--halted', action='store_true', help='Halt machine on startup')
+    parser.add_argument('--debug', action='store_true', help='Enable QEMU gdbserver')
+    parser.add_argument('--debug-listen', help='QEMU gdbserver listen address')
+
     parser.add_argument('kernel')
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     return parser
@@ -192,6 +196,15 @@ def build_full_def(base_definition: Any, args: argparse.Namespace) -> Any:
                 if v.translate:
                     replacement_value = v.translate(replacement_value)
                 arg.arguments[k] = replacement_value
+
+    if args.halted:
+        result['opts'].append(Argument('S'))
+
+    if args.debug:
+        if args.debug_listen:
+            result['opts'].append(Argument('gdb', value=args.debug_listen))
+        else:
+            result['opts'].append(Argument('s'))
 
     result['opts'].extend([
         Argument('kernel', value=args.kernel),

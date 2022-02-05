@@ -2,8 +2,9 @@ import argparse
 import configparser
 import os
 from dataclasses import dataclass, field
-from os.path import dirname
 from typing import Union, Dict, Optional, Callable, Type, Any, TextIO
+
+from .find_qemu import find_qemu
 
 ArgValue = Union[str, int, None, 'ProvidedValue']
 
@@ -42,40 +43,7 @@ def build_argument_command_line(argument: Argument) -> list[str]:
     return result
 
 
-def find_qemu(engine: str) -> str:
-    def find_executable(base_path: str) -> Optional[str]:
-        exts = os.environ.get('PATHEXT', '').split(os.path.pathsep)
-        for e in exts:
-            path = f'{base_path}/{engine}{e}'
-            if os.path.exists(path):
-                return path
-        return None
 
-    paths_to_check = []
-
-    # TODO: os.environ['QEMU_DEV']
-
-    if 'QEMU_DIR' in os.environ:
-        paths_to_check.append(os.environ['QEMU_DIR'].rstrip('/').rstrip('\\'))
-
-    look_at = dirname(__file__)
-    while True:
-        paths_to_check.append(look_at)
-        paths_to_check.append(look_at + '/qemu')
-        look_at_next = dirname(look_at)
-        if look_at_next == look_at:
-            break
-
-        look_at = look_at_next
-
-    paths_to_check.extend(os.environ.get('PATH', '').split(os.pathsep))
-
-    for p in paths_to_check:
-        found = find_executable(p)
-        if found is not None:
-            return found
-
-    return engine
 
 
 def build_command_line(something: Any) -> list[str]:

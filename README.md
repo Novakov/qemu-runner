@@ -15,3 +15,12 @@ combined layer:
 3. Directories in `PATH` environment variable.
 
 On Windows, `PATHEXT` variable is used to determine executable extension.
+
+# Layer search precedence
+If layer path is absolute and file is not found, search process fails immediately.
+
+If layer path is relative, following directories are searched:
+1. Current directory
+2. Directories specified as "search directories"
+3. Directories specified in `QEMU_LAYER_DIR` environment variable
+4. Packages embedded in runner (including `qemu_runner` package)

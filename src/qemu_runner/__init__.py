@@ -43,13 +43,10 @@ def build_argument_command_line(argument: Argument) -> list[str]:
     return result
 
 
-
-
-
 def build_command_line(something: Any) -> list[str]:
     result = []
 
-    result.append(find_qemu(something['engine']))
+    result.append(str(find_qemu(something['engine'])))
 
     arguments: list[Argument] = something['opts']
 

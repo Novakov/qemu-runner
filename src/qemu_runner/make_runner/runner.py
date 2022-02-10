@@ -3,7 +3,7 @@ import sys
 from io import StringIO
 
 from qemu_runner import load_base_def_from_layers, make_arg_parser, build_full_def, build_command_line
-from qemu_runner.layer import load_layer
+from qemu_runner.layer_locator import load_layer
 
 
 def build_qemu_command_line(embdedded_layers: list[str], args: list[str]) -> list[str]:

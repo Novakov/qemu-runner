@@ -6,7 +6,7 @@ from importlib import resources
 from importlib.abc import Traversable
 from pathlib import Path
 
-from qemu_runner.layer import load_layer
+from qemu_runner.layer_locator import load_layer
 
 
 def parse_args():

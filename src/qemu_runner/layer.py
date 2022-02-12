@@ -1,8 +1,9 @@
 from configparser import ConfigParser
 from dataclasses import dataclass
-from typing import List, Sequence, Dict
+from pathlib import Path
+from typing import List, Sequence, Dict, Protocol, Optional
 
-from .argument import Argument, ArgumentValue
+from .argument import Argument, ArgumentValue, build_command_line_for_argument
 
 
 @dataclass(frozen=True)
@@ -86,8 +87,25 @@ def parse_layer(config_parser: ConfigParser) -> Layer:
     )
 
 
-def build_command_line(layer: Layer) -> List[str]:
-    pass  # TODO
+class FindQemuFunc(Protocol):
+    def __call__(self, engine: str) -> Path:
+        pass
+
+
+def build_command_line(layer: Layer, find_qemu_func: Optional[FindQemuFunc] = None) -> Sequence[str]:
+    if layer.general.engine == '':
+        raise Exception('Must specify engine')
+
+    def _yield_args():
+        if find_qemu_func:
+            yield find_qemu_func(layer.general.engine)
+        else:
+            yield layer.general.engine
+
+        for arg in layer.arguments:
+            yield from build_command_line_for_argument(arg)
+
+    return list(_yield_args())
 
 
 def combine_layers(layers: List[Layer]) -> Layer:

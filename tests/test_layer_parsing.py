@@ -15,6 +15,55 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
             Layer(general=GeneralSettings(engine='my-engine'))
     ),
     (
+            """
+            [general]
+            engine = my-engine
+            kernel = my-kernel.elf
+            cmdline = a b c
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', kernel='my-kernel.elf', kernel_cmdline='a b c'))
+    ),
+    (
+            """
+            [general]
+            engine = my-engine
+            gdb = yes
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', gdb=True))
+    ),
+    (
+            """
+            [general]
+            engine = my-engine
+            gdb = no
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', gdb=False))
+    ),
+    (
+            """
+            [general]
+            engine = my-engine
+            gdb_dev = tcp::5555
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', gdb_dev='tcp::5555'))
+    ),
+    (
+            """
+            [general]
+            engine = my-engine
+            halted = yes
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', halted=True))
+    ),
+    (
+            """
+            [general]
+            engine = my-engine
+            halted = no
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', halted=False))
+    ),
+    (
             '',
             Layer()
     ),

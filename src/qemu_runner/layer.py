@@ -9,6 +9,11 @@ from .argument import Argument, ArgumentValue, build_command_line_for_argument
 @dataclass(frozen=True)
 class GeneralSettings:
     engine: str = ''
+    kernel: Optional[str] = None
+    kernel_cmdline: Optional[str] = None
+    halted: bool = False
+    gdb: bool = False
+    gdb_dev: Optional[str] = None
 
 
 class Layer:
@@ -107,9 +112,32 @@ def parse_layer(config_parser: ConfigParser) -> Layer:
         return [read_argument(section) for section in config_parser.sections() if section not in WELL_KNOWN_SECTIONS]
 
     def read_general_settings() -> GeneralSettings:
-        return GeneralSettings(
-            engine=config_parser.get('general', 'engine', fallback='')
-        )
+        result = GeneralSettings()
+
+        if not config_parser.has_section('general'):
+            return result
+
+        section = dict(config_parser.items('general'))
+
+        if 'engine' in section:
+            result = replace(result, engine=section['engine'])
+
+        if 'kernel' in section:
+            result = replace(result, kernel=section['kernel'])
+
+        if 'cmdline' in section:
+            result = replace(result, kernel_cmdline=section['cmdline'])
+
+        if 'gdb' in section:
+            result = replace(result, gdb=config_parser.getboolean('general', 'gdb'))
+
+        if 'gdb_dev' in section:
+            result = replace(result, gdb_dev=section['gdb_dev'])
+
+        if 'halted' in section:
+            result = replace(result, halted=config_parser.getboolean('general', 'halted'))
+
+        return result
 
     return Layer(
         general=read_general_settings(),
@@ -135,8 +163,22 @@ def build_command_line(layer: Layer, find_qemu_func: Optional[FindQemuFunc] = No
         for arg in layer.arguments:
             yield from build_command_line_for_argument(arg)
 
+        if layer.general.halted:
+            yield '-S'
+
+        if layer.general.gdb:
+            if layer.general.gdb_dev:
+                yield '-gdb'
+                yield layer.general.gdb_dev
+            else:
+                yield '-s'
+
+        if layer.general.kernel:
+            yield '-kernel'
+            yield layer.general.kernel
+
+        if layer.general.kernel_cmdline:
+            yield '-append'
+            yield layer.general.kernel_cmdline
+
     return list(_yield_args())
-
-
-def combine_layers(layers: List[Layer]) -> Layer:
-    pass  # TODO: apply in the loop

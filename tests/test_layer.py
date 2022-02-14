@@ -1,3 +1,5 @@
+import pytest
+
 from qemu_runner.layer import *
 
 
@@ -25,9 +27,69 @@ def test_create_layer():
     assert layer.arguments[1] == Argument('device', 'i2c-controller', {'id': 'id2', 'path': 'path1'})
 
 
+MY_ENGINE = GeneralSettings(engine='my-engine')
+MY_ENGINE2 = GeneralSettings(engine='my-engine2')
 
-# TODO: layer apply empty == layer
+LAYER_APPLY_CASES = [
+    (Layer(), Layer(), Layer()),
+    (Layer(MY_ENGINE), Layer(), Layer(MY_ENGINE)),
+    (Layer(), Layer(MY_ENGINE), Layer(MY_ENGINE)),
+    (Layer(MY_ENGINE), Layer(MY_ENGINE2), Layer(MY_ENGINE2)),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),
+        Layer(MY_ENGINE, [Argument('chardev', 'c1', {'id': 'id2', 'b': 'a'})]),
+        Layer(MY_ENGINE, [
+            Argument('device', 'd1', {'id': 'id1', 'p': 'a'}),
+            Argument('chardev', 'c1', {'id': 'id2', 'b': 'a'})
+        ]),
+    ),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),
+        Layer(MY_ENGINE, []),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),
+    ),
+    (
+        Layer(MY_ENGINE, []),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),
+    ),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1'})]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p2': 'v2'})]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1', 'p2': 'v2'})]),
+    ),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1'})]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p2': 'v2'}), Argument('-gdb')]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1', 'p2': 'v2'}), Argument('-gdb')]),
+    ),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1'})]),
+        Layer(MY_ENGINE, [Argument('device', 'd2', {'id': 'id1', 'p2': 'v2'}), Argument('-gdb')]),
+        Layer(MY_ENGINE, [Argument('device', 'd2', {'id': 'id1', 'p1': 'v1', 'p2': 'v2'}), Argument('-gdb')]),
+    ),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1'})]),
+        Layer(MY_ENGINE, [Argument('device', None, {'id': 'id1', 'p2': 'v2'}), Argument('-gdb')]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1', 'p2': 'v2'}), Argument('-gdb')]),
+    ),
+    (
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p1': 'v1'})]),
+        Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id2', 'p2': 'v2'}), Argument('-gdb')]),
+        Layer(MY_ENGINE, [
+            Argument('device', 'd1', {'id': 'id1', 'p1': 'v1'}),
+            Argument('device', 'd1', {'id': 'id2', 'p2': 'v2'}),
+            Argument('-gdb')
+        ]),
+    ),
+]
+
+
+@pytest.mark.parametrize(('base_layer', 'addition', 'expected'), LAYER_APPLY_CASES)
+def test_apply_layer(base_layer: Layer, addition: Layer, expected: Layer):
+    actual = base_layer.apply(addition)
+    assert actual == expected
+
 # TODO: commandline for layer
 # TODO: commandline for layer, no engine
 # TODO: commandline for layer, some args
-# TODO: apply (blob)

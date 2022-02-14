@@ -42,6 +42,9 @@ class Argument:
 
         return replace(self, arguments=updated)
 
+    def id_matches(self, other: 'Argument') -> bool:
+        return (self.name, self.id_value) == (other.name, other.id_value)
+
 
 def build_command_line_for_argument(argument: Argument) -> list[str]:
     result = [f'-{argument.name}']

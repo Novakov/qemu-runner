@@ -1,7 +1,7 @@
 from configparser import ConfigParser
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import List, Sequence, Dict, Protocol, Optional
+from typing import List, Sequence, Dict, Protocol, Optional, Iterable
 
 from .argument import Argument, ArgumentValue, build_command_line_for_argument
 
@@ -24,6 +24,39 @@ class Layer:
     def arguments(self) -> Sequence[Argument]:
         return self._arguments
 
+    def apply(self, addition: 'Layer') -> 'Layer':
+        def apply_general() -> GeneralSettings:
+            other = addition._general
+            return replace(
+                self._general,
+                engine=other.engine if other.engine != '' else self._general.engine
+            )
+
+        def apply_arguments() -> Iterable[Argument]:
+            remaining_other = list(addition._arguments)
+
+            for arg in self._arguments:
+                arg_addition = [other_arg for other_arg in remaining_other if other_arg.id_matches(arg)]
+
+                assert len(arg_addition) <= 1
+
+                if len(arg_addition) == 0:
+                    yield arg
+                else:
+                    updated_arg = arg.update_arguments(arg_addition[0].arguments)
+                    if arg_addition[0].value is not None:
+                        updated_arg = updated_arg.replace_value(arg_addition[0].value)
+                    yield updated_arg
+                    remaining_other.remove(arg_addition[0])
+
+            for arg in remaining_other:
+                yield arg
+
+        return Layer(
+            general=apply_general(),
+            arguments=list(apply_arguments())
+        )
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, Layer):
             return False
@@ -42,9 +75,6 @@ class Layer:
 
     def __repr__(self):
         return f'Layer(general={self._general!r}, arguments={self._arguments!r})'
-
-    def apply(self, addition: 'Layer') -> 'Layer':
-        pass  # TODO
 
 
 WELL_KNOWN_SECTIONS = ['general']

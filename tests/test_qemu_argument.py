@@ -1,6 +1,5 @@
 import pytest
 
-from qemu_runner.layer import *
 from qemu_runner.argument import *
 
 
@@ -150,3 +149,24 @@ def test_argument_cannot_remove_id():
     arg = Argument(name='device', arguments={'id': 'a'})
     with pytest.raises(Exception):  # TODO: more specific exception
         arg.remove_arguments(['id'])
+
+
+@pytest.mark.parametrize(('a', 'b'), [
+    (Argument('-device'), Argument('-device')),
+    (Argument('-device', '', {'id': 'id1'}), Argument('-device', '', {'id': 'id1'})),
+    (Argument('-device', '', {'id': 'id1', 'p': 'a'}), Argument('-device', '', {'id': 'id1'})),
+    (Argument('-device', '', {'id': 'id1'}), Argument('-device', '', {'id': 'id1', 'p': 'a'})),
+])
+def test_argument_id_matches(a: Argument, b: Argument):
+    assert a.id_matches(b)
+
+
+@pytest.mark.parametrize(('a', 'b'), [
+    (Argument('-device'), Argument('-chardev')),
+    (Argument('-device', '', {'id': 'id1'}), Argument('-device')),
+    (Argument('-device'), Argument('-device', '', {'id': 'id1'})),
+    (Argument('-device', '', {'id': 'id1'}), Argument('-device', '', {'id': 'id2'})),
+    (Argument('-device', '', {'id': 'id1'}), Argument('-chardev', '', {'id': 'id1'})),
+])
+def test_argument_id_not_matches(a: Argument, b: Argument):
+    assert not a.id_matches(b)

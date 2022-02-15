@@ -37,11 +37,11 @@ def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.Pat
     ]
 
 
-def test_runner_flow(tmpdir: Path):
-    engine = place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
+def test_runner_flow(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
 
-    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)
-    cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
 
     assert cmdline == [
         engine,
@@ -101,4 +101,4 @@ def test_layers_are_embbedded_in_runner(tmpdir: Path):
 
     cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
 
-    assert_arg_set_in_cmdline(['-device', 'test_device,addr=12,id=test_id'], cmdline)
+    assert_arg_set_in_cmdline(['-device', 'test_device,id=test_id,addr=12'], cmdline)

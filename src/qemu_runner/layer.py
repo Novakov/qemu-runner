@@ -11,8 +11,8 @@ class GeneralSettings:
     engine: str = ''
     kernel: Optional[str] = None
     kernel_cmdline: Optional[str] = None
-    halted: bool = False
-    gdb: bool = False
+    halted: Optional[bool] = None
+    gdb: Optional[bool] = None
     gdb_dev: Optional[str] = None
 
 
@@ -34,7 +34,12 @@ class Layer:
             other = addition._general
             return replace(
                 self._general,
-                engine=other.engine if other.engine != '' else self._general.engine
+                engine=other.engine if other.engine != '' else self._general.engine,
+                kernel=other.kernel if other.kernel != '' else self._general.kernel,
+                kernel_cmdline=other.kernel_cmdline if other.kernel_cmdline != '' else self._general.kernel_cmdline,
+                halted=other.halted if other.halted is not None else self._general.halted,
+                gdb=other.gdb if other.gdb is not None else self._general.gdb,
+                gdb_dev=other.gdb_dev if other.gdb_dev is not None else self._general.gdb_dev,
             )
 
         def apply_arguments() -> Iterable[Argument]:
@@ -156,7 +161,7 @@ def build_command_line(layer: Layer, find_qemu_func: Optional[FindQemuFunc] = No
 
     def _yield_args():
         if find_qemu_func:
-            yield find_qemu_func(layer.general.engine)
+            yield str(find_qemu_func(layer.general.engine))
         else:
             yield layer.general.engine
 

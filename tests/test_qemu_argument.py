@@ -7,35 +7,35 @@ from qemu_runner.argument import *
     (Argument(name='device'), ['-device']),
     (Argument(name='device', value='my-controller'), ['-device', 'my-controller']),
 
-    (Argument(name='device', value='my-controller', arguments={
+    (Argument(name='device', value='my-controller', attributes={
         'id': 'abc'
     }), ['-device', 'my-controller,id=abc']),
-    (Argument(name='device', value='my-controller', arguments={
+    (Argument(name='device', value='my-controller', attributes={
         'id': 'abc',
         'path': 'def',
     }), ['-device', 'my-controller,id=abc,path=def']),
-    (Argument(name='device', value='my-controller', arguments={
+    (Argument(name='device', value='my-controller', attributes={
         'path': 'def',
         'id': 'abc',
     }), ['-device', 'my-controller,id=abc,path=def']),
-    (Argument(name='device', value='my-controller', arguments={
+    (Argument(name='device', value='my-controller', attributes={
         'id': 'abc',
         'enable': None
     }), ['-device', 'my-controller,id=abc,enable']),
 
-    (Argument(name='device', arguments={
+    (Argument(name='device', attributes={
         'id': 'abc'
     }), ['-device', 'id=abc']),
-    (Argument(name='device', arguments={
+    (Argument(name='device', attributes={
         'id': 'abc',
         'path': 'def',
     }), ['-device', 'id=abc,path=def']),
-    (Argument(name='device', arguments={
+    (Argument(name='device', attributes={
         'path': 'def',
         'id': 'abc',
     }), ['-device', 'id=abc,path=def']),
 
-    (Argument(name='device', arguments={
+    (Argument(name='device', attributes={
         'enable': None,
         'id': 'abc',
     }), ['-device', 'id=abc,enable']),
@@ -46,18 +46,18 @@ def test_argument_cmdline(arg: Argument, cmdline: list[str]):
 
 
 def test_argument_access_values():
-    arg = Argument(name='device', value='nand-controller', arguments={
+    arg = Argument(name='device', value='nand-controller', attributes={
         'arg1': 12,
         'arg2': 'def'
     })
 
     assert arg.value == 'nand-controller'
-    assert arg.arguments['arg1'] == 12
-    assert arg.arguments['arg2'] == 'def'
+    assert arg.attributes['arg1'] == 12
+    assert arg.attributes['arg2'] == 'def'
 
 
 def test_argument_access_id():
-    arg = Argument(name='device', arguments={
+    arg = Argument(name='device', attributes={
         'arg1': 10,
         'id': 'my-id'
     })
@@ -67,11 +67,11 @@ def test_argument_access_id():
 
 def test_argument_dont_set_empty_id():
     with pytest.raises(Exception): # TODO: more specific exception
-        Argument(name='device', arguments={'id': None})
+        Argument(name='device', attributes={'id': None})
 
 
 def test_argument_access_id_no_id():
-    arg = Argument(name='device', arguments={
+    arg = Argument(name='device', attributes={
         'arg1': 10,
     })
 
@@ -80,7 +80,7 @@ def test_argument_access_id_no_id():
 
 def test_argument_fail_create_with_non_str_id():
     with pytest.raises(Exception):  # TODO: more specific exception
-        Argument(name='device', arguments={'id': 12})
+        Argument(name='device', attributes={'id': 12})
 
 
 def test_argument_update_value():
@@ -91,7 +91,7 @@ def test_argument_update_value():
 
 
 def test_argument_update_args():
-    arg = Argument(name='device', arguments={
+    arg = Argument(name='device', attributes={
         'a': 1,
         'b': '2',
         'c': None
@@ -103,7 +103,7 @@ def test_argument_update_args():
         'z': 'yy'
     })
 
-    assert updated.arguments == {
+    assert updated.attributes == {
         'a': 22,
         'b': 'xx',
         'c': None,
@@ -115,7 +115,7 @@ def test_argument_update_args():
     ('abc', 'abc'),
 ])
 def test_argument_id_change_valid(old: ArgumentValue, new: ArgumentValue):
-    arg = Argument(name='device', arguments={'id': old})
+    arg = Argument(name='device', attributes={'id': old})
     updated = arg.update_arguments({'id': new})
 
     assert updated.id_value == new
@@ -126,13 +126,13 @@ def test_argument_id_change_valid(old: ArgumentValue, new: ArgumentValue):
     ('abc', 'def'),
 ])
 def test_argument_id_change_invalid(old: ArgumentValue, new: ArgumentValue):
-    arg = Argument(name='device', arguments={'id': old})
+    arg = Argument(name='device', attributes={'id': old})
     with pytest.raises(Exception):  # TODO: more specific exception
         arg.update_arguments({'id': new})
 
 
 def test_argument_remove_args():
-    arg = Argument(name='device', arguments={
+    arg = Argument(name='device', attributes={
         'a': '1',
         'b': '2',
         'c': 3
@@ -140,13 +140,13 @@ def test_argument_remove_args():
 
     updated = arg.remove_arguments(['a', 'b'])
 
-    assert updated.arguments == {
+    assert updated.attributes == {
         'c': 3
     }
 
 
 def test_argument_cannot_remove_id():
-    arg = Argument(name='device', arguments={'id': 'a'})
+    arg = Argument(name='device', attributes={'id': 'a'})
     with pytest.raises(Exception):  # TODO: more specific exception
         arg.remove_arguments(['id'])
 

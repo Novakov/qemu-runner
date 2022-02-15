@@ -86,7 +86,7 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
             arg1=1
             arg2=2
             """,
-            Layer(arguments=[Argument('device', arguments={'arg1': '1', 'arg2': '2'})])
+            Layer(arguments=[Argument('device', attributes={'arg1': '1', 'arg2': '2'})])
     ),
     (
             """
@@ -94,7 +94,7 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
             arg1=1
             arg2=2
             """,
-            Layer(arguments=[Argument('device', arguments={'id': 'd1', 'arg1': '1', 'arg2': '2'})])
+            Layer(arguments=[Argument('device', attributes={'id': 'd1', 'arg1': '1', 'arg2': '2'})])
     ),
     (
             """
@@ -107,8 +107,8 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
             arg4=4
             """,
             Layer(arguments=[
-                Argument('device', arguments={'id': 'd1', 'arg1': '1', 'arg2': '2'}),
-                Argument('device', arguments={'id': 'd2', 'arg3': '3', 'arg4': '4'})
+                Argument('device', attributes={'id': 'd1', 'arg1': '1', 'arg2': '2'}),
+                Argument('device', attributes={'id': 'd2', 'arg3': '3', 'arg4': '4'})
             ])
     ),
     (
@@ -122,8 +122,8 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
             arg4=4
             """,
             Layer(arguments=[
-                Argument('device', arguments={'arg1': '1', 'arg2': '2'}),
-                Argument('device', arguments={'id': 'd2', 'arg3': '3', 'arg4': '4'})
+                Argument('device', attributes={'arg1': '1', 'arg2': '2'}),
+                Argument('device', attributes={'id': 'd2', 'arg3': '3', 'arg4': '4'})
             ])
     )
 ])

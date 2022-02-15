@@ -53,7 +53,7 @@ class Layer:
                 if len(arg_addition) == 0:
                     yield arg
                 else:
-                    updated_arg = arg.update_arguments(arg_addition[0].arguments)
+                    updated_arg = arg.update_arguments(arg_addition[0].attributes)
                     if arg_addition[0].value is not None:
                         updated_arg = updated_arg.replace_value(arg_addition[0].value)
                     yield updated_arg
@@ -110,7 +110,7 @@ def parse_layer(config_parser: ConfigParser) -> Layer:
         return Argument(
             name=arg_name,
             value=config_parser.get(section, '@', fallback=None),
-            arguments=read_argument_attributes(section)
+            attributes=read_argument_attributes(section)
         )
 
     def read_arguments() -> List[Argument]:

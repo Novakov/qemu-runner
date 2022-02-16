@@ -4,5 +4,4 @@ from qemu_runner.make_runner.runner import *
 
 EMBEDDED_LAYERS = {embedded_layers!r}
 
-cmdline = build_qemu_command_line(EMBEDDED_LAYERS, sys.argv[1:])
-execute_process(cmdline)
+execute_runner(EMBEDDED_LAYERS, sys.argv[1:])

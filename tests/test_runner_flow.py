@@ -2,11 +2,11 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Sequence, List
 
 import pytest
 
-from .test_utllities import place_echo_args
+from .test_utllities import place_echo_args, with_env
 
 CmdlineArg = Union[str, os.PathLike]
 
@@ -19,7 +19,7 @@ def run_make_runner(*args: CmdlineArg, cwd: Optional[os.PathLike] = None) -> Non
     assert cp.returncode == 0
 
 
-def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.PathLike] = None) -> list[str]:
+def execute_runner(runner, args: Sequence[CmdlineArg], cwd: Optional[os.PathLike] = None, check: bool = True) -> subprocess.CompletedProcess:
     cp = subprocess.run(
         [sys.executable, str(runner), *map(str, args)],
         cwd=cwd,
@@ -27,8 +27,15 @@ def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.Pat
         stderr=subprocess.PIPE,
         encoding='utf-8'
     )
+    if check:
+        assert cp.stderr == ''
+        assert cp.returncode == 0
 
-    assert cp.stderr == ''
+    return cp
+
+
+def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.PathLike] = None) -> list[str]:
+    cp = execute_runner(runner, args, cwd=cwd)
 
     actual_args = cp.stdout.splitlines(keepends=False)
     return [
@@ -48,6 +55,19 @@ def test_runner_flow(tmp_path: Path):
         '-machine', 'virt_cortex_m,flash_kb=1024',
         '-kernel', 'abc.elf',
         '-append', 'arg1 arg2'
+    ]
+
+
+def test_runner_flow_no_args(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
+
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf')
+
+    assert cmdline == [
+        engine,
+        '-machine', 'virt_cortex_m,flash_kb=1024',
+        '-kernel', 'abc.elf',
     ]
 
 
@@ -76,29 +96,127 @@ def test_builtin_args(tmpdir: Path, runner_args: list[str], qemu_args: list[list
         assert_arg_set_in_cmdline(arg_set, cmdline)
 
 
-def test_debug_listen_no_debug(tmpdir: Path):
-    place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
+def test_debug_listen_no_debug(tmp_path: Path):
+    place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
 
-    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)
-    cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', '--debug-listen', 'MARK-DEBUG', 'abc.elf', 'arg1', 'arg2')
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', '--debug-listen', 'MARK-DEBUG', 'abc.elf', 'arg1', 'arg2')
 
     assert 'MARK-DEBUG' not in cmdline
 
 
-def test_layers_are_embbedded_in_runner(tmpdir: Path):
-    place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
+def test_layers_are_embbedded_in_runner(tmp_path: Path):
+    place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
 
-    with open(tmpdir / 'my-layer.ini', 'w') as f:
+    with open(tmp_path / 'my-layer.ini', 'w') as f:
         f.write("""
         [device:test_id]
         @=test_device
         addr=12
         """)
 
-    run_make_runner('-l', 'virt-cortex-m.ini', 'my-layer.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)
+    run_make_runner('-l', 'virt-cortex-m.ini', 'my-layer.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
 
-    os.unlink(tmpdir / 'my-layer.ini')
+    os.unlink(tmp_path / 'my-layer.ini')
 
-    cmdline = capture_runner_cmdline(tmpdir / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
+    cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
 
     assert_arg_set_in_cmdline(['-device', 'test_device,id=test_id,addr=12'], cmdline)
+
+
+def test_extract_base_command_line_with_kernel(tmp_path: Path):
+    with open(tmp_path / 'my-layer.ini', 'w') as f:
+        f.write("""
+        [device:test_id]
+        @=test_device
+        addr=12
+        """)
+
+    run_make_runner('-l', 'virt-cortex-m.ini', 'my-layer.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+
+    with with_env({'QEMU_DEV': 'my-qemu'}):
+        cp = execute_runner(tmp_path / 'test.pyz', ['--debug', '--dry-run', 'abc.elf', 'a', 'b', 'c'])
+
+    assert cp.stdout.strip() == (
+                "my-qemu -machine virt_cortex_m,flash_kb=1024 -device test_device,id=test_id,addr=12 " +
+                "-s -kernel abc.elf -append 'a b c'")
+
+
+def test_extract_base_command_line_no_kernel(tmp_path: Path):
+    with open(tmp_path / 'my-layer.ini', 'w') as f:
+        f.write("""
+        [device:test_id]
+        @=test_device
+        addr=12
+        """)
+
+    run_make_runner('-l', 'virt-cortex-m.ini', 'my-layer.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+
+    with with_env({'QEMU_DEV': 'my-qemu'}):
+        cp = execute_runner(tmp_path / 'test.pyz', ['--debug', '--dry-run'])
+
+    assert cp.stdout.strip() == "my-qemu -machine virt_cortex_m,flash_kb=1024 -device test_device,id=test_id,addr=12 -s"
+
+
+def test_derive_runner(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'my-qemu')
+
+    with open(tmp_path / 'layer1.ini', 'w') as f:
+        f.write("""
+        [general]
+        engine = my-qemu
+
+        [device:d1]
+        @=test
+        """)
+
+    with open(tmp_path / 'layer2.ini', 'w') as f:
+        f.write("""
+        [device:d2]
+        @=test
+        """)
+
+    run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'base_runner.pyz', cwd=tmp_path)
+
+    execute_runner(
+        tmp_path / 'base_runner.pyz', ['--layers', './layer2.ini', '--derive', './derived.pyz'],
+        cwd=tmp_path
+    )
+
+    cmdline = capture_runner_cmdline(tmp_path / 'derived.pyz', 'abc.elf')
+
+    assert cmdline == [
+        engine,
+        '-device', 'test,id=d1',
+        '-device', 'test,id=d2',
+        '-kernel', 'abc.elf',
+    ]
+
+
+@pytest.mark.parametrize('args', [
+    ['--inspect', '--derive', 'abc.pyz'],
+    ['--derive', 'abc.pyz', 'kernel.elf'],
+    ['--derive', 'abc.pyz', 'kernel.elf', 'a', 'b'],
+    ['--inspect', '--dry-run'],
+    ['--derive', 'abc.pyz', '--dry-run'],
+    ['--inspect', 'kernel.elf'],
+    ['--inspect', 'kernel.elf', 'a', 'b'],
+
+    # ['--derive', 'abc.pyz', '--halted'],
+    # ['--derive', 'abc.pyz', '--debug'],
+    # ['--derive', 'abc.pyz', '--debug-listen', 'abc'],
+    #
+    # ['--inspect', '--halted'],
+    # ['--inspect', '--debug'],
+    # ['--inspect', '--debug-listen', 'abc'],
+
+    ['--halted'],
+    ['--debug'],
+    ['--debug-listen', 'abc']
+])
+def test_invalid_args(tmp_path: Path, args: List[str]) -> None:
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+
+    cp = execute_runner(tmp_path / 'test.pyz', args, check=False, cwd=tmp_path)
+    assert 'test.pyz: error:' in cp.stderr
+    assert cp.returncode != 0

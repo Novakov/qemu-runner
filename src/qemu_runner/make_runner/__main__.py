@@ -1,7 +1,6 @@
 import argparse
 
-from qemu_runner.layer_locator import load_layer
-from .make import make_runner
+from .make import make_runner, load_layers_from_all_search_paths
 
 
 def parse_args():
@@ -12,7 +11,7 @@ def parse_args():
 
 
 def main(args: argparse.Namespace):
-    layer_contents = [load_layer(layer, packages=['qemu_runner']) for layer in args.layers]
+    layer_contents = load_layers_from_all_search_paths(args.layers)
     make_runner(args.output, layer_contents)
 
 

@@ -3,3 +3,5 @@
 *.pyc
 __pycache__
 playground
+*.egg-info
+tests/test_packages/*/dist

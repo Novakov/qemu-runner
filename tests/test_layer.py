@@ -94,7 +94,3 @@ LAYER_APPLY_CASES = [
 def test_apply_layer(base_layer: Layer, addition: Layer, expected: Layer):
     actual = base_layer.apply(addition)
     assert actual == expected
-
-# TODO: commandline for layer
-# TODO: commandline for layer, no engine
-# TODO: commandline for layer, some args

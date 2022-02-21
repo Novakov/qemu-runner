@@ -5,10 +5,23 @@ from importlib import resources
 from importlib.abc import Traversable
 from pathlib import Path
 from typing import IO, List
+import pkg_resources
+
+from qemu_runner.layer_locator import load_layer
 
 __all__ = [
     'make_runner',
+    'load_layers_from_all_search_paths',
 ]
+
+
+def load_layers_from_all_search_paths(layer_names: List[str]) -> List[str]:
+    packages = ['qemu_runner']
+    for ep in pkg_resources.iter_entry_points('qemu_runner_layer_packages'):
+        ep: pkg_resources.EntryPoint
+        packages.append(ep.module_name)
+
+    return [load_layer(layer, packages=packages) for layer in layer_names]
 
 
 def copy_directory(root: Traversable, archive: zipfile.ZipFile, subdir: Path) -> None:

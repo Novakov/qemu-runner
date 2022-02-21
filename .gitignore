@@ -5,3 +5,5 @@ __pycache__
 playground
 *.egg-info
 tests/test_packages/*/dist
+build
+dist

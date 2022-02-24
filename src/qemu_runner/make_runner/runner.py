@@ -3,6 +3,7 @@ import shlex
 import subprocess
 import sys
 from configparser import ConfigParser
+from typing import List
 
 from qemu_runner import find_qemu
 from qemu_runner.layer import Layer, parse_layer, build_command_line, GeneralSettings
@@ -42,7 +43,7 @@ def make_layer_from_args(args: argparse.Namespace) -> Layer:
     return Layer(general=general)
 
 
-def build_qemu_command_line(embedded_layers: list[str], args: argparse.Namespace) -> list[str]:
+def build_qemu_command_line(embedded_layers: List[str], args: argparse.Namespace) -> List[str]:
     layer_contents = [load_layer(
         layer,
         packages=['embedded_layers']
@@ -65,12 +66,15 @@ def build_qemu_command_line(embedded_layers: list[str], args: argparse.Namespace
     return list(full_cmdline)
 
 
-def execute_process(command_line: list[str]) -> None:
-    cp = subprocess.run(command_line)
-    sys.exit(cp.returncode)
+def execute_process(command_line: List[str]) -> None:
+    try:
+        cp = subprocess.run(command_line)
+        sys.exit(cp.returncode)
+    except FileNotFoundError:
+        raise
 
 
-def make_derived_runner(embedded_layers: list[str], args: argparse.Namespace) -> None:
+def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) -> None:
     base_layers = [load_layer(
         layer,
         packages=['embedded_layers']
@@ -84,7 +88,7 @@ def make_derived_runner(embedded_layers: list[str], args: argparse.Namespace) ->
     make_runner(args.derive, base_layers + additional_layers)
 
 
-def execute_runner(embedded_layers: list[str], args: list[str]) -> None:
+def execute_runner(embedded_layers: List[str], args: List[str]) -> None:
     arg_parser = make_arg_parser()
     parsed_args = arg_parser.parse_args(args)
 

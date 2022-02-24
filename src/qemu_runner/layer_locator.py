@@ -1,13 +1,13 @@
 import os
 import pkgutil
-from typing import Optional, Iterable
+from typing import Optional, Iterable, List
 
 
 class LayerNotFoundError(Exception):
     pass
 
 
-def find_layer_file(layer: str, dirs: list[str]) -> Optional[str]:
+def find_layer_file(layer: str, dirs: List[str]) -> Optional[str]:
     possible_files = (os.path.join(base_dir, layer) for base_dir in dirs)
 
     for p in possible_files:
@@ -18,7 +18,7 @@ def find_layer_file(layer: str, dirs: list[str]) -> Optional[str]:
     return None
 
 
-def find_layer_package(layer: str, packages: list[str]) -> Optional[str]:
+def find_layer_package(layer: str, packages: List[str]) -> Optional[str]:
     for pkg in packages:
         try:
             data = pkgutil.get_data(pkg, f'layers/{layer}')
@@ -30,7 +30,7 @@ def find_layer_package(layer: str, packages: list[str]) -> Optional[str]:
     return None
 
 
-def flatten_environ_dirs(environ_names: list[str]) -> Iterable[str]:
+def flatten_environ_dirs(environ_names: List[str]) -> Iterable[str]:
     for name in environ_names:
         for d in os.environ.get(name, '').split(os.pathsep):
             yield d
@@ -39,9 +39,9 @@ def flatten_environ_dirs(environ_names: list[str]) -> Iterable[str]:
 def load_layer(
         layer: str,
         *,
-        packages: Optional[list[str]] = None,
-        search_dir: Optional[list[os.PathLike]] = None,
-        environ_names: Optional[list[str]] = None
+        packages: Optional[List[str]] = None,
+        search_dir: Optional[List[os.PathLike]] = None,
+        environ_names: Optional[List[str]] = None
 ) -> str:
     packages = packages or []
     search_dir = search_dir or []

@@ -40,7 +40,7 @@ from qemu_runner.argument import *
         'id': 'abc',
     }), ['-device', 'id=abc,enable']),
 ])
-def test_argument_cmdline(arg: Argument, cmdline: list[str]):
+def test_argument_cmdline(arg: Argument, cmdline: List[str]):
     actual = build_command_line_for_argument(arg)
     assert actual == cmdline
 
@@ -66,7 +66,7 @@ def test_argument_access_id():
 
 
 def test_argument_dont_set_empty_id():
-    with pytest.raises(Exception): # TODO: more specific exception
+    with pytest.raises(Exception):  # TODO: more specific exception
         Argument(name='device', attributes={'id': None})
 
 

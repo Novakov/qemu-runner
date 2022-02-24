@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, replace
-from typing import Union, Mapping, Optional
+from typing import Union, Mapping, Optional, List
 
 ArgumentValue = Union[int, str, None]
 
@@ -33,7 +33,7 @@ class Argument:
         updated_args.update(new_values)
         return replace(self, attributes=updated_args)
 
-    def remove_arguments(self, names: list[str]):
+    def remove_arguments(self, names: List[str]):
         if 'id' in names:
             raise Exception('Cannot remove assigned id')
         updated = dict(self.attributes)
@@ -46,7 +46,7 @@ class Argument:
         return (self.name, self.id_value) == (other.name, other.id_value)
 
 
-def build_command_line_for_argument(argument: Argument) -> list[str]:
+def build_command_line_for_argument(argument: Argument) -> List[str]:
     result = [f'-{argument.name}']
 
     arg_value = []

@@ -1,10 +1,11 @@
 import os
+import sys
 from os.path import dirname
 from pathlib import Path
 from typing import Optional
 
 
-def find_qemu(engine: str, script_path: str = __file__) -> Optional[Path]:
+def find_qemu(engine: str, script_path: Optional[str] = None) -> Optional[Path]:
     def find_executable(base_path: Path) -> Optional[Path]:
         exts = os.environ.get('PATHEXT', '').split(os.path.pathsep)
         for e in exts:
@@ -12,6 +13,9 @@ def find_qemu(engine: str, script_path: str = __file__) -> Optional[Path]:
             if os.path.exists(path):
                 return path
         return None
+
+    if script_path is None:
+        script_path = __file__
 
     paths_to_check = []
 

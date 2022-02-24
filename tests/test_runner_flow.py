@@ -34,7 +34,7 @@ def execute_runner(runner, args: Sequence[CmdlineArg], cwd: Optional[os.PathLike
     return cp
 
 
-def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.PathLike] = None) -> list[str]:
+def capture_runner_cmdline(runner: Path, *args: CmdlineArg, cwd: Optional[os.PathLike] = None) -> List[str]:
     cp = execute_runner(runner, args, cwd=cwd)
 
     actual_args = cp.stdout.splitlines(keepends=False)
@@ -71,7 +71,7 @@ def test_runner_flow_no_args(tmp_path: Path):
     ]
 
 
-def assert_arg_set_in_cmdline(arg_set: list[str], cmdline: list[str]):
+def assert_arg_set_in_cmdline(arg_set: List[str], cmdline: List[str]):
     if len(arg_set) == 1:
         assert arg_set[0] in cmdline
     else:
@@ -86,7 +86,7 @@ def assert_arg_set_in_cmdline(arg_set: list[str], cmdline: list[str]):
     (['--debug'], [['-s']]),
     (['--debug', '--debug-listen', 'abc'], [['-gdb', 'abc']]),
 ])
-def test_builtin_args(tmpdir: Path, runner_args: list[str], qemu_args: list[list[str]]):
+def test_builtin_args(tmpdir: Path, runner_args: List[str], qemu_args: List[List[str]]):
     place_echo_args(tmpdir / 'qemu' / 'qemu-system-arm')
 
     run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmpdir / 'test.pyz', cwd=tmpdir)

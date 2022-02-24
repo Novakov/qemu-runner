@@ -1,4 +1,5 @@
 import os
+from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
@@ -126,15 +127,15 @@ def test_precedence(tmp_path):
     for f in files:
         place_file(f, str(f))
 
-    with (
-            with_pypath(tmp_path / 'py-path'),
-            with_cwd(tmp_path),
-            with_env({
-                'DIR1': os.pathsep.join([str(tmp_path / 'env-dir1a'), str(tmp_path / 'env-dir1b')]),
-                'DIR2': os.pathsep.join([str(tmp_path / 'env-dir2a'), str(tmp_path / 'env-dir2b')]),
-            }),
-            unload_module_on_exit('layer1', 'layer2'),
-    ):
+    with ExitStack() as stack:
+        stack.enter_context(with_pypath(tmp_path / 'py-path'))
+        stack.enter_context(with_cwd(tmp_path))
+        stack.enter_context(with_env({
+            'DIR1': os.pathsep.join([str(tmp_path / 'env-dir1a'), str(tmp_path / 'env-dir1b')]),
+            'DIR2': os.pathsep.join([str(tmp_path / 'env-dir2a'), str(tmp_path / 'env-dir2b')]),
+        }))
+        stack.enter_context(unload_module_on_exit('layer1', 'layer2'))
+
         while len(files) > 0:
             expected = files[0]
 

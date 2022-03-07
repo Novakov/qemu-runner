@@ -7,3 +7,4 @@ playground
 tests/test_packages/*/dist
 build
 dist
+.local

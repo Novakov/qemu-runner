@@ -49,6 +49,14 @@ MY_ENGINE = GeneralSettings(engine='my-engine')
             ),
             ['my-engine', '-device', 'val1,id=id1,path=path1', '-S', '-s', '-kernel', 'abc.elf', '-append', 'a b c']
     ),
+    (
+            Layer(GeneralSettings(engine='my-engine', cpu='my-cpu')),
+            ['my-engine', '-cpu', 'my-cpu']
+    ),
+    (
+            Layer(GeneralSettings(engine='my-engine', memory='256M')),
+            ['my-engine', '-m', '256M']
+    )
 ])
 def test_build_command_line(layer: Layer, cmdline: List[str]):
     actual = build_command_line(layer)

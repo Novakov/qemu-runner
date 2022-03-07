@@ -14,6 +14,8 @@ class GeneralSettings:
     halted: Optional[bool] = None
     gdb: Optional[bool] = None
     gdb_dev: Optional[str] = None
+    cpu: Optional[str] = None
+    memory: Optional[str] = None
 
 
 class Layer:
@@ -167,6 +169,14 @@ def build_command_line(layer: Layer, find_qemu_func: Optional[FindQemuFunc] = No
 
         for arg in layer.arguments:
             yield from build_command_line_for_argument(arg)
+
+        if layer.general.cpu:
+            yield '-cpu'
+            yield layer.general.cpu
+
+        if layer.general.memory:
+            yield '-m'
+            yield layer.general.memory
 
         if layer.general.halted:
             yield '-S'

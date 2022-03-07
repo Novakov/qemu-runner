@@ -26,6 +26,8 @@ def find_layer_package(layer: str, packages: List[str]) -> Optional[str]:
                 return data.decode('utf-8')
         except FileNotFoundError:
             continue
+        except OSError:
+            continue
 
     return None
 

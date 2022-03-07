@@ -5,8 +5,6 @@ import shutil
 import zipfile
 import zipimport
 from importlib import resources
-# from importlib.abc import Traversable
-from modulefinder import Module
 from pathlib import Path
 from typing import IO, List, Any
 import pkg_resources

@@ -9,7 +9,7 @@ from urllib.request import urlretrieve
 
 import pytest
 
-from tests.test_utllities import with_env
+from tests.test_utllities import with_env, place_echo_args
 
 
 def install_script(builder: venv.EnvBuilder, context, name, url):
@@ -46,9 +46,14 @@ def install_setuptools(builder: venv.EnvBuilder, context):
 
 @pytest.fixture()
 def venv_py(tmp_path: Path) -> Path:
+    venv_dir = tmp_path / 'venv'
+    return create_venv(venv_dir)
+
+
+def create_venv(venv_dir: Path):
     builder = venv.EnvBuilder(with_pip=True)
-    builder.create(tmp_path / 'venv')
-    ctx = builder.ensure_directories(tmp_path / 'venv')
+    builder.create(venv_dir)
+    ctx = builder.ensure_directories(venv_dir)
     # builder.create_configuration(ctx)
     # builder.setup_python(ctx)
     # install_setuptools(builder, ctx)
@@ -93,3 +98,35 @@ def test_with_venv(tmp_path: Path, venv_py: Path):
     with with_env({'PYTHONPATH': Path(__file__).parent.parent / 'src'}):
         layers = ['virt-cortex-m.ini', 'test.ini']
         make_runner(venv_py, ['--layers', *layers, '--output', 'runner.pyz'], cwd=tmp_path)
+
+
+def test_with_multiple_venvs(tmp_path: Path):
+    venv1 = create_venv(tmp_path / 'venv1')
+    venv2 = create_venv(tmp_path / 'venv2')
+    venv3 = create_venv(tmp_path / 'venv3')
+
+    with with_env({'PYTHONPATH': Path(__file__).parent.parent / 'src'}):
+        layers = ['virt-cortex-m.ini']
+        make_runner(venv1, ['--layers', *layers, '--output', tmp_path / 'base_runner.pyz'], cwd=tmp_path)
+
+    install_dev_package(venv2, Path(__file__).parent / 'test_packages' / 'pkg1')
+
+    cp = subprocess.run([
+        venv2,
+        str(tmp_path / 'base_runner.pyz'),
+        '--layers', 'test.ini',
+        '--derive', str(tmp_path / 'derived.pyz'),
+    ])
+
+    assert cp.returncode == 0
+
+    place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
+
+    cp = subprocess.run([
+        venv3,
+        str(tmp_path / 'derived.pyz'),
+        'kernel.elf',
+        'a', 'b', 'c'
+    ])
+
+    assert cp.returncode == 0

@@ -8,7 +8,7 @@ from typing import List
 from qemu_runner import find_qemu
 from qemu_runner.layer import Layer, parse_layer, build_command_line, GeneralSettings
 from qemu_runner.layer_locator import load_layer
-from qemu_runner.make_runner import make_runner
+from qemu_runner.make_runner import make_runner, load_layers_from_all_search_paths
 
 
 def make_arg_parser():
@@ -80,10 +80,11 @@ def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) ->
         packages=['embedded_layers']
     ) for layer in embedded_layers]
 
-    additional_layers = [load_layer(
-        layer,
-        packages=['qemu_runner']
-    ) for layer in args.layers]
+    # additional_layers = [load_layer(
+    #     layer,
+    #     packages=['qemu_runner']
+    # ) for layer in args.layers]
+    additional_layers = load_layers_from_all_search_paths(args.layers)
 
     make_runner(args.derive, base_layers + additional_layers)
 

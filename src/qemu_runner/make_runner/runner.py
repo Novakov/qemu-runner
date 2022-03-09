@@ -19,7 +19,7 @@ def make_arg_parser():
     runner_args.add_argument('--inspect', help='Inspect content of runner archive', action='store_true')
     runner_args.add_argument('--derive', help='Create new runner based on current one', type=argparse.FileType('wb'))
 
-    derive_args = parser.add_argument_group('--derive argumentss')
+    derive_args = parser.add_argument_group('--derive arguments')
     derive_args.add_argument('--layers', nargs='+', default=[])
     derive_args.add_argument('--track-qemu', action='store_true',
                              help='Add QEMU directory as visible by this runner to QEMU search path of derived runner')

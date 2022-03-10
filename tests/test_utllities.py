@@ -7,15 +7,25 @@ from typing import Iterable, Dict, Optional, Union
 
 
 def place_echo_args(file_path: Path) -> str:
-    source = 'D:/Coding/echo-args/build/Debug/echo_args.exe'
-
-    ext = ''
     if sys.platform == 'win32':
-        ext = '.exe'
+        ext = '.cmd'
+    else:
+        ext = ''
 
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     dst = Path(file_path).with_suffix(ext)
-    shutil.copy(src=source, dst=dst)
+
+    with open(dst, 'w') as f:
+        if sys.platform == 'win32':
+            f.write(f'@"{sys.executable}" -c "import sys; print(\'\\n\'.join(sys.argv[1:]))" %0 %*')
+        else:
+            f.write("""#!/bin/sh
+echo $(realpath $0)
+for i; do 
+   echo $i 
+done
+            """)
+            os.fchmod(f.fileno(), 0o755)
 
     return str(dst).lower().replace('\\', '/')
 

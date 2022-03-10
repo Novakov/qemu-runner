@@ -1,2 +1,2 @@
 recursive-include src/qemu_runner/layers *.ini
-include src/qemu_runner/make_runner/make.py.in
+include src/qemu_runner/make_runner/main.py.in

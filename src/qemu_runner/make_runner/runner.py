@@ -3,7 +3,8 @@ import shlex
 import subprocess
 import sys
 from configparser import ConfigParser
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from qemu_runner import find_qemu
 from qemu_runner.layer import Layer, parse_layer, build_command_line, GeneralSettings
@@ -17,7 +18,11 @@ def make_arg_parser():
     runner_args = parser.add_argument_group('Runner arguments')
     runner_args.add_argument('--inspect', help='Inspect content of runner archive', action='store_true')
     runner_args.add_argument('--derive', help='Create new runner based on current one', type=argparse.FileType('wb'))
-    runner_args.add_argument('--layers', nargs='+', default=[])
+
+    derive_args = parser.add_argument_group('--derive argumentss')
+    derive_args.add_argument('--layers', nargs='+', default=[])
+    derive_args.add_argument('--track-qemu', action='store_true',
+                             help='Add QEMU directory as visible by this runner to QEMU search path of derived runner')
 
     qemu_args = parser.add_argument_group('QEMU arguments')
     qemu_args.add_argument('--halted', action='store_true', help='Halt machine on startup')
@@ -43,7 +48,7 @@ def make_layer_from_args(args: argparse.Namespace) -> Layer:
     return Layer(general=general)
 
 
-def build_qemu_command_line(embedded_layers: List[str], args: argparse.Namespace) -> List[str]:
+def build_qemu_command_line(embedded_layers: List[str], additional_script_bases: List[str], args: argparse.Namespace) -> List[str]:
     layer_contents = [load_layer(
         layer,
         packages=['embedded_layers']
@@ -61,7 +66,10 @@ def build_qemu_command_line(embedded_layers: List[str], args: argparse.Namespace
 
     combined_layer = combined_layer.apply(args_layer)
 
-    full_cmdline = build_command_line(combined_layer, find_qemu_func=find_qemu)
+    def do_find_qemu(engine: str) -> Optional[Path]:
+        return find_qemu(engine, script_paths=[__file__] + additional_script_bases)
+
+    full_cmdline = build_command_line(combined_layer, find_qemu_func=do_find_qemu)
 
     return list(full_cmdline)
 
@@ -80,16 +88,21 @@ def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) ->
         packages=['embedded_layers']
     ) for layer in embedded_layers]
 
-    # additional_layers = [load_layer(
-    #     layer,
-    #     packages=['qemu_runner']
-    # ) for layer in args.layers]
     additional_layers = load_layers_from_all_search_paths(args.layers)
 
-    make_runner(args.derive, base_layers + additional_layers)
+    if args.track_qemu:
+        base_script_paths: List[str] = [__file__]
+    else:
+        base_script_paths = []
+
+    make_runner(
+        args.derive,
+        layer_contents=base_layers + additional_layers,
+        additional_script_bases=base_script_paths
+    )
 
 
-def execute_runner(embedded_layers: List[str], args: List[str]) -> None:
+def execute_runner(embedded_layers: List[str], additional_script_bases: List[str], args: List[str]) -> None:
     arg_parser = make_arg_parser()
     parsed_args = arg_parser.parse_args(args)
 
@@ -114,7 +127,7 @@ def execute_runner(embedded_layers: List[str], args: List[str]) -> None:
     if parsed_args.derive:
         make_derived_runner(embedded_layers, parsed_args)
     else:
-        cmdline = build_qemu_command_line(embedded_layers, parsed_args)
+        cmdline = build_qemu_command_line(embedded_layers, additional_script_bases, parsed_args)
 
         if parsed_args.dry_run:
             print(shlex.join(cmdline))

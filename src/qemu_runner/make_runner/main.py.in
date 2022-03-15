@@ -3,5 +3,6 @@ import sys
 from qemu_runner.make_runner.runner import *
 
 EMBEDDED_LAYERS = {embedded_layers!r}
+ADDITIONAL_SCRIPT_BASES = {additional_script_bases!r}
 
-execute_runner(EMBEDDED_LAYERS, sys.argv[1:])
+execute_runner(EMBEDDED_LAYERS, ADDITIONAL_SCRIPT_BASES, sys.argv[1:])

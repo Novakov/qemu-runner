@@ -15,7 +15,11 @@ def parse_args(argv: List[str]):
 def main(argv: List[str]):
     args = parse_args(argv)
     layer_contents = load_layers_from_all_search_paths(args.layers)
-    make_runner(args.output, layer_contents)
+    make_runner(
+        args.output,
+        layer_contents=layer_contents,
+        additional_script_bases=[]
+    )
 
 
 def run():

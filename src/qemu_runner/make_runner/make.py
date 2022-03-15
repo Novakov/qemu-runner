@@ -34,7 +34,6 @@ if hasattr(importlib.resources, 'files'):
                 continue
 
             if item.is_file():
-                print(f'Copy {item} to {subdir}')
                 with archive.open(str(subdir / item.name), 'w') as out_f:
                     with item.open('rb') as in_f:
                         shutil.copyfileobj(in_f, out_f)
@@ -52,7 +51,6 @@ def copy_directory_path(root: Path, archive: zipfile.ZipFile, archive_sub_dir: s
         rel_path = sub_path.relative_to(root)
 
         for f in file_names:
-            print(f'Copy {sub_path}/{f} to {rel_path}')
             with archive.open(str(Path(archive_sub_dir) / rel_path / f), 'w') as out_f:
                 with (sub_path / f).open('rb') as in_f:
                     shutil.copyfileobj(in_f, out_f)
@@ -95,7 +93,11 @@ def copy_package(package: Any, archive: zipfile.ZipFile) -> None:
             copy_directory_path(p, archive, package.__name__)
 
 
-def make_runner(output: IO[bytes], layer_contents: List[str]) -> None:
+def make_runner(output: IO[bytes],
+                *,
+                layer_contents: List[str],
+                additional_script_bases: List[str]
+                ) -> None:
     with zipfile.ZipFile(output, mode='w') as archive:
         copy_package(qemu_runner, archive)
 
@@ -109,5 +111,6 @@ def make_runner(output: IO[bytes], layer_contents: List[str]) -> None:
         with archive.open('__main__.py', 'w') as f:
             main_template = pkgutil.get_data('qemu_runner.make_runner', 'main.py.in').decode('utf-8')
             f.write(main_template.format(
-                embedded_layers=[f'{i}.ini' for i in range(0, len(layer_contents))]
+                embedded_layers=[f'{i}.ini' for i in range(0, len(layer_contents))],
+                additional_script_bases=additional_script_bases
             ).encode('utf-8'))

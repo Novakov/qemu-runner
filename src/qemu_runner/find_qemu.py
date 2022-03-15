@@ -2,10 +2,10 @@ import os
 import sys
 from os.path import dirname
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 
-def find_qemu(engine: str, script_path: Optional[str] = None) -> Optional[Path]:
+def find_qemu(engine: str, script_paths: Optional[List[str]] = None) -> Optional[Path]:
     def find_executable(base_path: Path) -> Optional[Path]:
         exts = os.environ.get('PATHEXT', '').split(os.path.pathsep)
         for e in exts:
@@ -14,8 +14,8 @@ def find_qemu(engine: str, script_path: Optional[str] = None) -> Optional[Path]:
                 return path
         return None
 
-    if script_path is None:
-        script_path = __file__
+    if script_paths is None:
+        script_paths = [__file__]
 
     paths_to_check = []
 
@@ -25,15 +25,16 @@ def find_qemu(engine: str, script_path: Optional[str] = None) -> Optional[Path]:
     if 'QEMU_DIR' in os.environ:
         paths_to_check.append(os.environ['QEMU_DIR'].rstrip('/').rstrip('\\'))
 
-    look_at = dirname(script_path)
-    while True:
-        paths_to_check.append(look_at)
-        paths_to_check.append(look_at + '/qemu')
-        look_at_next = dirname(look_at)
-        if look_at_next == look_at:
-            break
+    for script_path in script_paths:
+        look_at = dirname(script_path)
+        while True:
+            paths_to_check.append(look_at)
+            paths_to_check.append(look_at + '/qemu')
+            look_at_next = dirname(look_at)
+            if look_at_next == look_at:
+                break
 
-        look_at = look_at_next
+            look_at = look_at_next
 
     paths_to_check.extend(os.environ.get('PATH', '').split(os.pathsep))
 

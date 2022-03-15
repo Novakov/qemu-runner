@@ -11,7 +11,7 @@ ENGINE = 'qemu-system-abc'
 
 
 def do_find_qemu(look_from: Path) -> Path:
-    return find_qemu(ENGINE, str(look_from / 'check.py'))
+    return find_qemu(ENGINE, [str(look_from / 'check.py')])
 
 
 @pytest.mark.parametrize('subdir', [

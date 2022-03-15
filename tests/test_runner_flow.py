@@ -193,6 +193,31 @@ def test_derive_runner(tmp_path: Path):
     ]
 
 
+def test_derive_keep_qemu_path(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'dir1' / 'qemu' / 'my-qemu')
+
+    with open(tmp_path / 'layer1.ini', 'w') as f:
+        f.write("""
+        [general]
+        engine = my-qemu
+
+        [device:d1]
+        @=test
+        """)
+
+    run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'dir1' / 'base_runner.pyz', cwd=tmp_path)
+
+    (tmp_path / 'dir2').mkdir()
+    execute_runner(
+        tmp_path / 'dir1' / 'base_runner.pyz', ['--layers', './layer1.ini', '--derive', './dir2/derived.pyz', '--track-qemu'],
+        cwd=tmp_path
+    )
+
+    cmdline = capture_runner_cmdline(tmp_path / 'dir2' / 'derived.pyz', 'abc.elf')
+
+    assert cmdline[0] == engine
+
+
 @pytest.mark.parametrize('args', [
     ['--inspect', '--derive', 'abc.pyz'],
     ['--derive', 'abc.pyz', 'kernel.elf'],

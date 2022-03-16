@@ -48,7 +48,8 @@ def make_layer_from_args(args: argparse.Namespace) -> Layer:
     return Layer(general=general)
 
 
-def build_qemu_command_line(embedded_layers: List[str], additional_script_bases: List[str], args: argparse.Namespace) -> List[str]:
+def build_qemu_command_line(embedded_layers: List[str], additional_script_bases: List[str], args: argparse.Namespace) -> \
+List[str]:
     layer_contents = [load_layer(
         layer,
         packages=['embedded_layers']
@@ -102,6 +103,32 @@ def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) ->
     )
 
 
+def make_layer_printer():
+    try:
+        from pygments import highlight
+        from pygments.lexers.configs import IniLexer
+        from pygments.formatters import TerminalFormatter
+        lexer = IniLexer()
+        formatter = TerminalFormatter()
+        return lambda s: print(highlight(s, lexer, formatter).strip())
+    except ImportError:
+        return lambda s: print(s)
+
+
+def inspect_runner(embedded_layers: List[str]) -> None:
+    layers = [(layer, load_layer(
+        layer,
+        packages=['embedded_layers']
+    )) for layer in embedded_layers]
+
+    print_ini = make_layer_printer()
+
+    for layer_name, layer in layers:
+        print(f'# Layer embedded_layers/{layer_name}:')
+        print_ini(layer.strip())
+        print()
+
+
 def execute_runner(embedded_layers: List[str], additional_script_bases: List[str], args: List[str]) -> None:
     arg_parser = make_arg_parser()
     parsed_args = arg_parser.parse_args(args)
@@ -126,6 +153,8 @@ def execute_runner(embedded_layers: List[str], additional_script_bases: List[str
 
     if parsed_args.derive:
         make_derived_runner(embedded_layers, parsed_args)
+    elif parsed_args.inspect:
+        inspect_runner(embedded_layers)
     else:
         cmdline = build_qemu_command_line(embedded_layers, additional_script_bases, parsed_args)
 

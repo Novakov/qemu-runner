@@ -218,6 +218,56 @@ def test_derive_keep_qemu_path(tmp_path: Path):
     assert cmdline[0] == engine
 
 
+def test_env_qemu_flags(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'my-qemu')
+
+    with open(tmp_path / 'layer1.ini', 'w') as f:
+        f.write("""
+        [general]
+        engine = my-qemu
+
+        [machine]
+        @=test
+        """)
+
+    run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'runner.pyz', cwd=tmp_path)
+    with with_env({'QEMU_FLAGS': '-s -device test,id=2'}):
+        cmdline = capture_runner_cmdline(tmp_path / 'runner.pyz', 'abc.elf')
+
+    assert cmdline == [
+        engine,
+        '-s',
+        '-device', 'test,id=2',
+        '-machine', 'test',
+        '-kernel', 'abc.elf'
+    ]
+
+
+def test_env_runner_flags(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'my-qemu')
+
+    with open(tmp_path / 'layer1.ini', 'w') as f:
+        f.write("""
+        [general]
+        engine = my-qemu
+
+        [machine]
+        @=test
+        """)
+
+    run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'runner.pyz', cwd=tmp_path)
+    with with_env({'QEMU_RUNNER_FLAGS': '--halted --debug'}):
+        cmdline = capture_runner_cmdline(tmp_path / 'runner.pyz', 'abc.elf')
+
+    assert cmdline == [
+        engine,
+        '-machine', 'test',
+        '-S',
+        '-s',
+        '-kernel', 'abc.elf',
+    ]
+
+
 @pytest.mark.parametrize('args', [
     ['--inspect', '--derive', 'abc.pyz'],
     ['--derive', 'abc.pyz', 'kernel.elf'],

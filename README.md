@@ -57,6 +57,17 @@ combined layer:
 
 On Windows, `PATHEXT` variable is used to determine executable extension.
 
+# Environment variables
+Several environment variables influences the way QEMU command line is constructed:
+* `QEMU_FLAGS` - arguments to be added to the QEMU command line during execution 
+* `QEMU_RUNNER_FLAGS` - arguments will be interpreted exactly as if they were added to runner execution. 
+
+Example:
+```shell
+shell> QEMU_FLAGS = '-d int' QEMU_RUNNER_FLAGS = '--halted' ./runner.pyz --dry-run kernel.elf
+qemu-system-arm -machine virt -d int -S -kernel kernel.elf
+```
+
 # Layer search precedence
 If layer path is absolute and file is not found, search process fails immediately.
 

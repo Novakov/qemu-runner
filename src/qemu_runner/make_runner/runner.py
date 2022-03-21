@@ -1,4 +1,5 @@
 import argparse
+import os
 import shlex
 import subprocess
 import sys
@@ -48,8 +49,12 @@ def make_layer_from_args(args: argparse.Namespace) -> Layer:
     return Layer(general=general)
 
 
-def build_qemu_command_line(embedded_layers: List[str], additional_script_bases: List[str], args: argparse.Namespace) -> \
-List[str]:
+def build_qemu_command_line(
+        *,
+        embedded_layers: List[str],
+        additional_script_bases: List[str],
+        args: argparse.Namespace,
+        additional_qemu_args: str) -> List[str]:
     layer_contents = [load_layer(
         layer,
         packages=['embedded_layers']
@@ -72,7 +77,13 @@ List[str]:
 
     full_cmdline = build_command_line(combined_layer, find_qemu_func=do_find_qemu)
 
-    return list(full_cmdline)
+    result = list(full_cmdline)
+
+    if additional_qemu_args != '':
+        user_qemu_args = shlex.split(additional_qemu_args, posix=sys.platform != 'win32')
+        result = [result[0], *user_qemu_args, *result[1:]]
+
+    return result
 
 
 def execute_process(command_line: List[str]) -> None:
@@ -131,6 +142,12 @@ def inspect_runner(embedded_layers: List[str]) -> None:
 
 def execute_runner(embedded_layers: List[str], additional_script_bases: List[str], args: List[str]) -> None:
     arg_parser = make_arg_parser()
+
+    env_runner_args = os.environ.get('QEMU_RUNNER_FLAGS', '')
+    if env_runner_args != '':
+        splitted_args = shlex.split(env_runner_args, posix=sys.platform != 'win32')
+        args = [*splitted_args, *args]
+
     parsed_args = arg_parser.parse_args(args)
 
     if parsed_args.derive and parsed_args.inspect:
@@ -156,7 +173,12 @@ def execute_runner(embedded_layers: List[str], additional_script_bases: List[str
     elif parsed_args.inspect:
         inspect_runner(embedded_layers)
     else:
-        cmdline = build_qemu_command_line(embedded_layers, additional_script_bases, parsed_args)
+        cmdline = build_qemu_command_line(
+            embedded_layers=embedded_layers,
+            additional_script_bases=additional_script_bases,
+            args=parsed_args,
+            additional_qemu_args=os.environ.get('QEMU_FLAGS', '')
+        )
 
         if parsed_args.dry_run:
             print(shlex.join(cmdline))

@@ -15,15 +15,44 @@ from qemu_runner.make_runner import make_runner, load_layers_from_all_search_pat
 
 def make_arg_parser():
     parser = argparse.ArgumentParser()
+    parser.formatter_class = argparse.RawDescriptionHelpFormatter
+
+    parser.description = '''QEMU runner wraps series of layers describing QEMU arguments as standalone executable file (ZIP file actually)
+requiring only Python 3.8+ standard library. 
+'''
+
+    qemu_dev = os.environ.get('QEMU_DEV', '<not set>')
+    qemu_dir = os.environ.get('QEMU_DIR', '<not set>')
+    qemu_runner_flags = os.environ.get('QEMU_RUNNER_FLAGS', '<not set>')
+    qemu_flags = os.environ.get('QEMU_FLAGS', '<not set>')
+
+    parser.epilog = f'''
+QEMU search precedence:
+    1. QEMU_DEV environment variable, direct path to executable (currently: {qemu_dev})
+    2. QEMU_DIR environment variable, path to directory containing QEMU executable (currently: {qemu_dir})
+    3. Runner and it's ancestor directories and /qemu subdirectory on each level
+    4. The same rule as (3) but for paths of base runners when derived with --track-qemu flag
+    5. Directories in PATH environment variable
+    
+Runtime QEMU flags
+    1. Contents of QEMU_RUNNER_FLAGS (currently: {qemu_runner_flags}) are treated as runner arguments
+    2. Contents of QEMU_FLAGS (currently: {qemu_flags}) are added as QEMU arguments without any interpretation 
+'''
 
     runner_args = parser.add_argument_group('Runner arguments')
     runner_args.add_argument('--inspect', help='Inspect content of runner archive', action='store_true')
     runner_args.add_argument('--derive', help='Create new runner based on current one', type=argparse.FileType('wb'))
 
-    derive_args = parser.add_argument_group('--derive arguments')
+    derive_args = parser.add_argument_group('Deriving runner with --derive')
     derive_args.add_argument('--layers', nargs='+', default=[])
     derive_args.add_argument('--track-qemu', action='store_true',
                              help='Add QEMU directory as visible by this runner to QEMU search path of derived runner')
+    derive_args.description = '''Deriving runner allows to customize base runner (potentially provided externally) with
+project-specific options. Additional options are specified as another set of layers that 
+will be applied on top of layers embedded in base runner. Tracking QEMU with --track-qemu
+allows to place derived runner in other directory (e.g. build directory of project) and 
+still use QEMU search rules from base QEMU runner.  
+'''
 
     qemu_args = parser.add_argument_group('QEMU arguments')
     qemu_args.add_argument('--halted', action='store_true', help='Halt machine on startup')
@@ -166,7 +195,7 @@ def execute_runner(embedded_layers: List[str], additional_script_bases: List[str
         arg_parser.error('--derive and --dry-run cannot be used together')
 
     if not parsed_args.inspect and not parsed_args.derive and (not parsed_args.kernel and not parsed_args.dry_run):
-        arg_parser.error('Specify action to perform: kernel, --dervice or --inspect')
+        arg_parser.error('Specify action to perform: kernel, --derive or --inspect')
 
     if parsed_args.derive:
         make_derived_runner(embedded_layers, parsed_args)

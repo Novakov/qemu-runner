@@ -1,5 +1,5 @@
 # QEMU Runner
-This project allows craetion of self-contained runner for QEMU with embedded command line arguments. Command line arguments are described in files called **layers**. They are simple INI files that can be combined together to express more complex command lines.
+This project allows creation of self-contained runner for QEMU with embedded command line arguments. Command line arguments are described in files called **layers**. They are simple INI files that can be combined together to express more complex command lines.
 
 ```shell
 > cat ./arm_virt.ini

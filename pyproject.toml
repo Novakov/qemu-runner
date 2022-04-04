@@ -1,6 +1,17 @@
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "release-$major.$minor.$patch$prerelease"
+version = "1.0.0"
+version_files = [
+    "pyproject.toml:version",
+    "setup.py"
+]
+
 [build-system]
 requires = [
     "setuptools>=42",
-    "wheel"
+    "wheel",
+    "pytest",
+    "commitizen"
 ]
 build-backend = "setuptools.build_meta"

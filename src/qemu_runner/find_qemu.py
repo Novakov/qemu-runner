@@ -5,7 +5,11 @@ from pathlib import Path
 from typing import Optional, List
 
 
-def find_qemu(engine: str, script_paths: Optional[List[str]] = None) -> Optional[Path]:
+def find_qemu(
+        engine: str,
+        script_paths: Optional[List[str]] = None,
+        search_paths: Optional[List[str]] = None
+) -> Optional[Path]:
     def find_executable(base_path: Path) -> Optional[Path]:
         exts = os.environ.get('PATHEXT', '').split(os.path.pathsep)
         for e in exts:
@@ -17,6 +21,9 @@ def find_qemu(engine: str, script_paths: Optional[List[str]] = None) -> Optional
     if script_paths is None:
         script_paths = [__file__]
 
+    if search_paths is None:
+        search_paths = []
+
     paths_to_check = []
 
     if 'QEMU_DEV' in os.environ:
@@ -24,6 +31,8 @@ def find_qemu(engine: str, script_paths: Optional[List[str]] = None) -> Optional
 
     if 'QEMU_DIR' in os.environ:
         paths_to_check.append(os.environ['QEMU_DIR'].rstrip('/').rstrip('\\'))
+
+    paths_to_check += search_paths
 
     for script_path in script_paths:
         look_at = dirname(script_path)

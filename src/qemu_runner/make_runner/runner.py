@@ -29,10 +29,12 @@ requiring only Python 3.8+ standard library.
     parser.epilog = f'''
 QEMU search precedence:
     1. QEMU_DEV environment variable, direct path to executable (currently: {qemu_dev})
-    2. QEMU_DIR environment variable, path to directory containing QEMU executable (currently: {qemu_dir})
-    3. Runner and it's ancestor directories and /qemu subdirectory on each level
-    4. The same rule as (3) but for paths of base runners when derived with --track-qemu flag
-    5. Directories in PATH environment variable
+    2. --qemu argument as direct path to executable (if specified)
+    3. QEMU_DIR environment variable, path to directory containing QEMU executable (currently: {qemu_dir})
+    4. --qemu-dir argument (if specified)
+    5. Runner and it's ancestor directories and /qemu subdirectory on each level
+    6. The same rule as (3) but for paths of base runners when derived with --track-qemu flag
+    7. Directories in PATH environment variable
     
 Runtime QEMU flags
     1. Contents of QEMU_RUNNER_FLAGS (currently: {qemu_runner_flags}) are treated as runner arguments
@@ -40,6 +42,8 @@ Runtime QEMU flags
 '''
 
     runner_args = parser.add_argument_group('Runner arguments')
+    runner_args.add_argument('--qemu-dir', help='Directory where runner should look for QEMU engine.')
+    runner_args.add_argument('--qemu', help='Explicit path to QEMU executable')
     runner_args.add_argument('--inspect', help='Inspect content of runner archive', action='store_true')
     runner_args.add_argument('--derive', help='Create new runner based on current one', type=argparse.FileType('wb'))
 
@@ -102,7 +106,14 @@ def build_qemu_command_line(
     combined_layer = combined_layer.apply(args_layer)
 
     def do_find_qemu(engine: str) -> Optional[Path]:
-        return find_qemu(engine, script_paths=[__file__] + additional_script_bases)
+        if args.qemu:
+            return Path(args.qemu)
+
+        return find_qemu(
+            engine=engine,
+            script_paths=[__file__] + additional_script_bases,
+            search_paths=[args.qemu_dir] if args.qemu_dir else []
+        )
 
     full_cmdline = build_command_line(combined_layer, find_qemu_func=do_find_qemu)
 

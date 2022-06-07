@@ -39,12 +39,14 @@ Runner provides following features, consult `--help` output for details:
 * Inspect command line
 
 # QEMU search precedence
-If environment variable`QEMU_DEV` is set, it is used as path to QEMU executable.
+If environment variable `QEMU_DEV` is set, it is used as path to QEMU executable.
+If environment variable `QEMU_DEV` is not set but argument `--qemu` is specified it is used as path to QEMU executable.
 
 If `QEMU_DEV` is not set, directories are searched for QEMU executable with name specified as `engine` in 
 combined layer:
 1. Directory specified by `QEMU_DIR` environment variable
-2. Each ancestor directory containing runner, up to the root directory and `qemu` subdirectory at each level.
+2. Directory specified by `--qemu-dir` argument
+3. Each ancestor directory containing runner, up to the root directory and `qemu` subdirectory at each level.
    If runner's path is `c:\dir1\dir2\runner.pyz`, then following directories are checked:
    1. `c:\dir1\dir2`
    2. `c:\dir1\dir2\qemu`
@@ -52,8 +54,8 @@ combined layer:
    4. `c:\dir1\qemu`
    5. `c:\`
    6. `c:\qemu`
-3. Repeat step 2 with path of base runner in case of derived runners with `--tract-qemu` option.
-4. Directories in `PATH` environment variable.
+4. Repeat step 2 with path of base runner in case of derived runners with `--tract-qemu` option.
+5. Directories in `PATH` environment variable.
 
 On Windows, `PATHEXT` variable is used to determine executable extension.
 

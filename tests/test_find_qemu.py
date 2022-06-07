@@ -59,6 +59,10 @@ def test_precedence(tmp_path: Path):
     files = [
         # QEMU_DIR
         place_echo_args(qemu_dir / ENGINE),
+
+        # Explicit search dir
+        place_echo_args(tmp_path / 'my-qemu' / ENGINE),
+
         # Runner ancestors
         place_echo_args(tmp_path / 'runner' / 'dir1' / ENGINE),
         place_echo_args(tmp_path / 'runner' / 'dir1' / 'qemu' / ENGINE),
@@ -75,7 +79,12 @@ def test_precedence(tmp_path: Path):
             'QEMU_DIR': str(qemu_dir),
             'PATH': os.pathsep.join([str(path1), str(path2)]),
         }):
-            p = do_find_qemu(tmp_path / 'runner' / 'dir1')
+            p = find_qemu(
+                ENGINE,
+                [str(tmp_path / 'runner' / 'dir1' / 'check.py')],
+                search_paths=[str(tmp_path / 'my-qemu')]
+            )
+
             assert p == Path(files[0])
 
         os.unlink(files[0])

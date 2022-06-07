@@ -295,3 +295,23 @@ def test_invalid_args(tmp_path: Path, args: List[str]) -> None:
     cp = execute_runner(tmp_path / 'test.pyz', args, check=False, cwd=tmp_path)
     assert 'test.pyz: error:' in cp.stderr
     assert cp.returncode != 0
+
+
+def test_explicit_qemu_dir(tmp_path: Path) -> None:
+    engine = place_echo_args(tmp_path / 'my-qemu' / 'qemu-system-arm')
+
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+
+    args = capture_runner_cmdline(tmp_path / 'test.pyz', '--qemu-dir', tmp_path / 'my-qemu', 'abc.elf')
+
+    assert args[0] == engine
+
+
+def test_explicit_qemu_executable(tmp_path: Path) -> None:
+    engine = place_echo_args(tmp_path / 'my-qemu' / 'qemu')
+
+    run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+
+    args = capture_runner_cmdline(tmp_path / 'test.pyz', '--qemu', engine, 'abc.elf')
+
+    assert args[0] == engine

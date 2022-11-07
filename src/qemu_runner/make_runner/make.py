@@ -5,6 +5,13 @@ import shutil
 import zipfile
 import zipimport
 from importlib import resources
+try:
+    from importlib.resources.abc import Traversable
+except ImportError:
+    try:
+        from importlib.abc import Traversable
+    except ImportError:
+        pass
 from pathlib import Path
 from typing import IO, List, Any
 import pkg_resources
@@ -28,7 +35,7 @@ def load_layers_from_all_search_paths(layer_names: List[str]) -> List[str]:
 
 
 if hasattr(importlib.resources, 'files'):
-    def copy_directory_traversable(root: importlib.abc.Traversable, archive: zipfile.ZipFile, subdir: Path) -> None:
+    def copy_directory_traversable(root: Traversable, archive: zipfile.ZipFile, subdir: Path) -> None:
         for item in root.iterdir():
             if item.name in ['__pycache__']:
                 continue

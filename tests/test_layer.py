@@ -38,7 +38,7 @@ LAYER_APPLY_CASES = [
     (
         Layer(GeneralSettings(engine='e1', kernel='k1', kernel_cmdline='c1', halted=False, gdb=False, gdb_dev='gdb1')),
         Layer(GeneralSettings(engine='e2', kernel='k2', kernel_cmdline='c2', halted=True, gdb=True, gdb_dev='gdb2')),
-        Layer(GeneralSettings(engine='e2', kernel='k2', kernel_cmdline='c2', halted=True, gdb=True, gdb_dev='gdb2')),
+        Layer(GeneralSettings(engine='e2', kernel='k2', kernel_cmdline='c1 c2', halted=True, gdb=True, gdb_dev='gdb2')),
     ),
     (
         Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),

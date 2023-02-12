@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field, replace
 from typing import Union, Mapping, Optional, List
 
+from .variable_resolution import VariableResolver, resolve_no_variables
+
 ArgumentValue = Union[int, str, None]
 
 
@@ -46,7 +48,9 @@ class Argument:
         return (self.name, self.id_value) == (other.name, other.id_value)
 
 
-def build_command_line_for_argument(argument: Argument) -> List[str]:
+def build_command_line_for_argument(
+        argument: Argument,
+        variable_resolver: VariableResolver = resolve_no_variables) -> List[str]:
     result = [f'-{argument.name}']
 
     arg_value = []
@@ -63,7 +67,7 @@ def build_command_line_for_argument(argument: Argument) -> List[str]:
         if v is None:
             arg_value.append(k)
         else:
-            arg_value.append(f'{k}={v}')
+            arg_value.append(f'{k}={variable_resolver(v)}')
 
     if arg_value:
         result.append(','.join(arg_value))

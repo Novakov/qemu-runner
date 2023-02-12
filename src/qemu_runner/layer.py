@@ -36,11 +36,18 @@ class Layer:
     def apply(self, addition: 'Layer') -> 'Layer':
         def apply_general() -> GeneralSettings:
             other = addition._general
+            cmdline = []
+            if self._general.kernel_cmdline is not None and self._general.kernel_cmdline != '':
+                cmdline.append(self._general.kernel_cmdline)
+
+            if other.kernel_cmdline is not None and other.kernel_cmdline != '':
+                cmdline.append(other.kernel_cmdline)
+
             return replace(
                 self._general,
                 engine=other.engine if other.engine != '' else self._general.engine,
                 kernel=other.kernel if other.kernel != '' else self._general.kernel,
-                kernel_cmdline=other.kernel_cmdline if other.kernel_cmdline != '' else self._general.kernel_cmdline,
+                kernel_cmdline=' '.join(cmdline) if cmdline else None,
                 halted=other.halted if other.halted is not None else self._general.halted,
                 gdb=other.gdb if other.gdb is not None else self._general.gdb,
                 gdb_dev=other.gdb_dev if other.gdb_dev is not None else self._general.gdb_dev,

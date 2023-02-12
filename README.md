@@ -148,8 +148,9 @@ Currently available variables:
 | `KERNEL_DIR`  | Directory containing kernel executable (path is not normalized) |
 
 ## How layers are combined
-Layers can be combined by applying one layer on top of the another. Operation 'build layer `LResult` by applying layer `LAdd` on top of `LBase`' is defined as follow:
-* `[general]` - `LResult` contains all settings from layers `LAdd` and `LBase`, values in `LAdd` override values in `LBase`
+Layers can be combined by applying one layer on top of the another. Operation 'build layer `LResult` by applying layer `LAdd` on top of `LBase`' is defined as follows:
+* `[general]` (except `cmdline`) - `LResult` contains all settings from layers `LAdd` and `LBase`, values in `LAdd` override values in `LBase`
+* `[general]`, `cmdline` value  - `LResult` contains `cmdline` from `LBase` followed by `LAdd` (command line arguments are combined)
 * `[name]`
   * If `LBase` does not contain section `[name]`, `LResult` will contain section from `LAdd`.
   * If `LBase` contains section `[name]`, `LResult` will contain `[name]` with all settings from `LBase` and `LAdd`, values in `LAdd` override values in `LBase`.

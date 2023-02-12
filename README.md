@@ -137,8 +137,18 @@ translates into:
 -device type1,id=d1,arg1=10,arg2=20 -device type1,id=d2,arg1=10,arg2=20 -device type2,id=d3,arg3=10,arg4=20
 ```
 
-## How layers are combined together
-Layers can be combined together by applying one layer on top of the another. Operation 'build layer `LResult` by applying layer `LAdd` on top of `LBase`' is defined as follow:
+
+## Variable resolution
+In sections `[name]` and `[name:id]` it is possible to use variables which will be resolved directly before building complete command lines. Variables are in form `${VARIABLE_NAME}`.
+
+Currently available variables:
+
+| Variable name | Value                                                           |
+|---------------|-----------------------------------------------------------------|
+| `KERNEL_DIR`  | Directory containing kernel executable (path is not normalized) |
+
+## How layers are combined
+Layers can be combined by applying one layer on top of the another. Operation 'build layer `LResult` by applying layer `LAdd` on top of `LBase`' is defined as follow:
 * `[general]` - `LResult` contains all settings from layers `LAdd` and `LBase`, values in `LAdd` override values in `LBase`
 * `[name]`
   * If `LBase` does not contain section `[name]`, `LResult` will contain section from `LAdd`.

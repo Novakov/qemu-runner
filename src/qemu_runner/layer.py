@@ -1,9 +1,11 @@
+import os.path
 from configparser import ConfigParser
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import List, Sequence, Dict, Protocol, Optional, Iterable
 
 from .argument import Argument, ArgumentValue, build_command_line_for_argument
+from .variable_resolution import VariableResolver, resolve_no_variables, append_resolver, make_resolver_from_dict
 
 
 @dataclass(frozen=True)
@@ -157,9 +159,22 @@ class FindQemuFunc(Protocol):
         pass
 
 
-def build_command_line(layer: Layer, find_qemu_func: Optional[FindQemuFunc] = None) -> Sequence[str]:
+def _make_variable_resolver_for_layer(layer: Layer) -> VariableResolver:
+    variables = {}
+    if layer.general.kernel:
+        variables['KERNEL_DIR'] = os.path.dirname(layer.general.kernel)
+
+    return make_resolver_from_dict(variables)
+
+
+def build_command_line(
+        layer: Layer,
+        find_qemu_func: Optional[FindQemuFunc] = None,
+        variable_resolver: VariableResolver = resolve_no_variables) -> Sequence[str]:
     if layer.general.engine == '':
         raise Exception('Must specify engine')
+
+    variable_resolver = append_resolver(variable_resolver, _make_variable_resolver_for_layer(layer))
 
     def _yield_args():
         if find_qemu_func:
@@ -168,7 +183,7 @@ def build_command_line(layer: Layer, find_qemu_func: Optional[FindQemuFunc] = No
             yield layer.general.engine
 
         for arg in layer.arguments:
-            yield from build_command_line_for_argument(arg)
+            yield from build_command_line_for_argument(arg, variable_resolver)
 
         if layer.general.cpu:
             yield '-cpu'

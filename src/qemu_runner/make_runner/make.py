@@ -4,14 +4,6 @@ import pkgutil
 import shutil
 import zipfile
 import zipimport
-from importlib import resources
-try:
-    from importlib.resources.abc import Traversable
-except ImportError:
-    try:
-        from importlib.abc import Traversable
-    except ImportError:
-        pass
 from pathlib import Path
 from typing import IO, List, Any
 import pkg_resources
@@ -35,7 +27,7 @@ def load_layers_from_all_search_paths(layer_names: List[str]) -> List[str]:
 
 
 if hasattr(importlib.resources, 'files'):
-    def copy_directory_traversable(root: Traversable, archive: zipfile.ZipFile, subdir: Path) -> None:
+    def copy_directory_traversable(root: 'Traversable', archive: zipfile.ZipFile, subdir: Path) -> None:
         for item in root.iterdir():
             if item.name in ['__pycache__']:
                 continue
@@ -80,6 +72,7 @@ def copy_directory_from_zip(archive_file: Path, source_sub_dir: Path, target_arc
 
 def copy_package(package: Any, archive: zipfile.ZipFile) -> None:
     if hasattr(importlib.resources, 'files'):
+        from importlib import resources
         # Python 3.9+ has nice access to files in package using importlib.resources.file and Traversable
         copy_directory_traversable(resources.files(package), archive, Path(package.__name__))
     elif isinstance(package.__loader__, zipimport.zipimporter):
@@ -95,7 +88,7 @@ def copy_package(package: Any, archive: zipfile.ZipFile) -> None:
             target_sub_dir=Path(package.__name__)
         )
     else:
-        # No Python 3.9, not zipimproter, let's hope that importlib.resources.path will do the job
+        # No Python 3.9, not zipimporter, let's hope that importlib.resources.path will do the job
         with importlib.resources.path(qemu_runner, '') as p:
             copy_directory_path(p, archive, package.__name__)
 
@@ -105,7 +98,7 @@ def make_runner(output: IO[bytes],
                 layer_contents: List[str],
                 additional_script_bases: List[str]
                 ) -> None:
-    with zipfile.ZipFile(output, mode='w') as archive:
+    with zipfile.ZipFile(output, mode='w', compression=zipfile.ZIP_STORED) as archive:
         copy_package(qemu_runner, archive)
 
         with archive.open('embedded_layers/__init__.py', 'w'):

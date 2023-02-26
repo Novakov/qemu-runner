@@ -10,7 +10,7 @@ setup(
     name='qemu-runner',
     version='1.2.0',
     description='Create self-contained wrappers around QEMU to hide & share long command-line invocations',
-    url='https://github.com/Novakov/qemu-runne',
+    url='https://github.com/Novakov/qemu-runner',
     long_description=description,
     long_description_content_type='text/markdown',
     author='Maciej Nowak',

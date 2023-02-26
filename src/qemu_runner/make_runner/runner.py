@@ -7,11 +7,6 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import List, Optional
 
-from qemu_runner import find_qemu
-from qemu_runner.layer import Layer, parse_layer, build_command_line, GeneralSettings
-from qemu_runner.layer_locator import load_layer
-from qemu_runner.make_runner import make_runner, load_layers_from_all_search_paths
-
 
 def make_arg_parser():
     parser = argparse.ArgumentParser()
@@ -71,7 +66,8 @@ still use QEMU search rules from base QEMU runner.
     return parser
 
 
-def make_layer_from_args(args: argparse.Namespace) -> Layer:
+def make_layer_from_args(args: argparse.Namespace) -> 'Layer':
+    from qemu_runner.layer import GeneralSettings, Layer
     general = GeneralSettings(
         kernel=args.kernel,
         kernel_cmdline=' '.join(args.arguments),
@@ -88,16 +84,19 @@ def build_qemu_command_line(
         additional_script_bases: List[str],
         args: argparse.Namespace,
         additional_qemu_args: str) -> List[str]:
+    from qemu_runner.layer_locator import load_layer
     layer_contents = [load_layer(
         layer,
         packages=['embedded_layers']
     ) for layer in embedded_layers]
 
+    from qemu_runner.layer import Layer
     combined_layer = Layer()
 
     for layer_content in layer_contents:
         parser = ConfigParser()
         parser.read_string(layer_content)
+        from qemu_runner.layer import parse_layer
         layer = parse_layer(parser)
         combined_layer = combined_layer.apply(layer)
 
@@ -109,12 +108,14 @@ def build_qemu_command_line(
         if args.qemu:
             return Path(args.qemu)
 
+        from qemu_runner import find_qemu
         return find_qemu(
             engine=engine,
             script_paths=[__file__] + additional_script_bases,
             search_paths=[args.qemu_dir] if args.qemu_dir else []
         )
 
+    from qemu_runner.layer import build_command_line
     full_cmdline = build_command_line(combined_layer, find_qemu_func=do_find_qemu)
 
     result = list(full_cmdline)
@@ -135,6 +136,8 @@ def execute_process(command_line: List[str]) -> None:
 
 
 def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) -> None:
+    from qemu_runner.make_runner.make import make_runner, load_layers_from_all_search_paths
+    from qemu_runner.layer_locator import load_layer
     base_layers = [load_layer(
         layer,
         packages=['embedded_layers']
@@ -167,6 +170,7 @@ def make_layer_printer():
 
 
 def inspect_runner(embedded_layers: List[str]) -> None:
+    from qemu_runner.layer_locator import load_layer
     layers = [(layer, load_layer(
         layer,
         packages=['embedded_layers']

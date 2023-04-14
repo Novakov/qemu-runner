@@ -1,6 +1,6 @@
 import sys
 
-from qemu_runner.make_runner.runner import *
+from qemu_runner.make_runner.runner import execute_runner
 
 EMBEDDED_LAYERS = {embedded_layers!r}
 ADDITIONAL_SCRIPT_BASES = {additional_script_bases!r}

@@ -8,7 +8,7 @@ with open(os.path.dirname(os.path.abspath(__file__)) + '/README.md', 'r') as f:
 
 setup(
     name='qemu-runner',
-    version='1.2.0',
+    version='1.3.0',
     description='Create self-contained wrappers around QEMU to hide & share long command-line invocations',
     url='https://github.com/Novakov/qemu-runner',
     long_description=description,

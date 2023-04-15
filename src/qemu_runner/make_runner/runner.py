@@ -29,7 +29,8 @@ QEMU search precedence:
     4. --qemu-dir argument (if specified)
     5. Runner and it's ancestor directories and /qemu subdirectory on each level
     6. The same rule as (3) but for paths of base runners when derived with --track-qemu flag
-    7. Directories in PATH environment variable
+    7. The same rule as (3) but for paths added with --qemu-dir when derived
+    8. Directories in PATH environment variable
     
 Runtime QEMU flags
     1. Contents of QEMU_RUNNER_FLAGS (currently: {qemu_runner_flags}) are treated as runner arguments
@@ -149,6 +150,9 @@ def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) ->
         base_script_paths: List[str] = [__file__]
     else:
         base_script_paths = []
+
+    if args.qemu_dir:
+        base_script_paths.append(args.qemu_dir)
 
     make_runner(
         args.derive,

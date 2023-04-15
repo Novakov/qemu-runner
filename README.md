@@ -55,7 +55,8 @@ combined layer:
    5. `c:\`
    6. `c:\qemu`
 4. Repeat step 2 with path of base runner in case of derived runners with `--tract-qemu` option.
-5. Directories in `PATH` environment variable.
+5. Repeat step 2 with path of passed as `--qemu-dir` when runner was derived.
+6. Directories in `PATH` environment variable.
 
 On Windows, `PATHEXT` variable is used to determine executable extension.
 

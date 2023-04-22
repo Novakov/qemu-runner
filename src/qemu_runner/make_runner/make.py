@@ -96,7 +96,8 @@ def copy_package(package: Any, archive: zipfile.ZipFile) -> None:
 def make_runner(output: IO[bytes],
                 *,
                 layer_contents: List[str],
-                additional_script_bases: List[str]
+                additional_script_bases: List[str],
+                additional_search_paths: List[str]
                 ) -> None:
     with zipfile.ZipFile(output, mode='w', compression=zipfile.ZIP_STORED) as archive:
         copy_package(qemu_runner, archive)
@@ -112,5 +113,6 @@ def make_runner(output: IO[bytes],
             main_template = pkgutil.get_data('qemu_runner.make_runner', 'main.py.in').decode('utf-8')
             f.write(main_template.format(
                 embedded_layers=[f'{i}.ini' for i in range(0, len(layer_contents))],
-                additional_script_bases=additional_script_bases
+                additional_script_bases=additional_script_bases,
+                additional_search_paths=additional_search_paths
             ).encode('utf-8'))

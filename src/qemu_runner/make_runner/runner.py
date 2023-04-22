@@ -83,6 +83,7 @@ def build_qemu_command_line(
         *,
         embedded_layers: List[str],
         additional_script_bases: List[str],
+        additional_search_paths: List[str],
         args: argparse.Namespace,
         additional_qemu_args: str) -> List[str]:
     from qemu_runner.layer_locator import load_layer
@@ -113,7 +114,7 @@ def build_qemu_command_line(
         return find_qemu(
             engine=engine,
             script_paths=[__file__] + additional_script_bases,
-            search_paths=[args.qemu_dir] if args.qemu_dir else []
+            search_paths=additional_search_paths + ([args.qemu_dir] if args.qemu_dir else [])
         )
 
     from qemu_runner.layer import build_command_line
@@ -136,7 +137,7 @@ def execute_process(command_line: List[str]) -> None:
         raise
 
 
-def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) -> None:
+def make_derived_runner(embedded_layers: List[str], additional_search_paths: List[str], args: argparse.Namespace) -> None:
     from qemu_runner.make_runner.make import make_runner, load_layers_from_all_search_paths
     from qemu_runner.layer_locator import load_layer
     base_layers = [load_layer(
@@ -152,12 +153,13 @@ def make_derived_runner(embedded_layers: List[str], args: argparse.Namespace) ->
         base_script_paths = []
 
     if args.qemu_dir:
-        base_script_paths.append(args.qemu_dir)
+        additional_search_paths.append(args.qemu_dir)
 
     make_runner(
         args.derive,
         layer_contents=base_layers + additional_layers,
-        additional_script_bases=base_script_paths
+        additional_script_bases=base_script_paths,
+        additional_search_paths=additional_search_paths
     )
 
 
@@ -188,7 +190,7 @@ def inspect_runner(embedded_layers: List[str]) -> None:
         print()
 
 
-def execute_runner(embedded_layers: List[str], additional_script_bases: List[str], args: List[str]) -> None:
+def execute_runner(embedded_layers: List[str], additional_script_bases: List[str], additional_search_paths: List[str], args: List[str]) -> None:
     arg_parser = make_arg_parser()
 
     env_runner_args = os.environ.get('QEMU_RUNNER_FLAGS', '')
@@ -217,13 +219,14 @@ def execute_runner(embedded_layers: List[str], additional_script_bases: List[str
         arg_parser.error('Specify action to perform: kernel, --derive or --inspect')
 
     if parsed_args.derive:
-        make_derived_runner(embedded_layers, parsed_args)
+        make_derived_runner(embedded_layers, additional_search_paths, parsed_args)
     elif parsed_args.inspect:
         inspect_runner(embedded_layers)
     else:
         cmdline = build_qemu_command_line(
             embedded_layers=embedded_layers,
             additional_script_bases=additional_script_bases,
+            additional_search_paths=additional_search_paths,
             args=parsed_args,
             additional_qemu_args=os.environ.get('QEMU_FLAGS', '')
         )

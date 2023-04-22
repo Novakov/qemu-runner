@@ -1,5 +1,4 @@
 import os
-import sys
 from os.path import dirname
 from pathlib import Path
 from typing import Optional, List

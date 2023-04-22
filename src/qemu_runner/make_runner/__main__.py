@@ -18,7 +18,8 @@ def main(argv: List[str]):
     make_runner(
         args.output,
         layer_contents=layer_contents,
-        additional_script_bases=[]
+        additional_script_bases=[],
+        additional_search_paths=[]
     )
 
 

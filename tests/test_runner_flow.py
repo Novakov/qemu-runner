@@ -221,7 +221,7 @@ def test_derive_keep_qemu_path(tmp_path: Path):
 
 
 def test_derive_add_qemu_dir(tmp_path: Path):
-    engine = place_echo_args(tmp_path / 'dir1' / 'qemu' / 'my-qemu')
+    engine = place_echo_args(tmp_path / 'dir1' / 'some-path' / 'my-qemu')
 
     with open(tmp_path / 'layer1.ini', 'w') as f:
         f.write("""
@@ -238,11 +238,44 @@ def test_derive_add_qemu_dir(tmp_path: Path):
 
     execute_runner(
         tmp_path / 'dir2' / 'base_runner.pyz',
-        ['--layers', './layer1.ini', '--derive', './dir2/derived.pyz', '--qemu-dir', tmp_path / 'dir1' / 'qemu'],
+        ['--layers', './layer1.ini', '--derive', './dir2/derived.pyz', '--qemu-dir', tmp_path / 'dir1' / 'some-path'],
         cwd=tmp_path
     )
 
     cmdline = capture_runner_cmdline(tmp_path / 'dir2' / 'derived.pyz', 'abc.elf')
+
+    assert cmdline[0] == engine
+
+
+def test_preserve_additional_search_path_in_next_derived_runner(tmp_path: Path):
+    engine = place_echo_args(tmp_path / 'dir1' / 'some-path' / 'my-qemu')
+
+    with open(tmp_path / 'layer1.ini', 'w') as f:
+        f.write("""
+        [general]
+        engine = my-qemu
+
+        [device:d1]
+        @=test
+        """)
+
+    (tmp_path / 'dir2').mkdir()
+
+    run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'dir2' / 'base_runner.pyz', cwd=tmp_path)
+
+    execute_runner(
+        tmp_path / 'dir2' / 'base_runner.pyz',
+        ['--layers', './layer1.ini', '--derive', './dir2/derived1.pyz', '--qemu-dir', tmp_path / 'dir1' / 'some-path'],
+        cwd=tmp_path
+    )
+
+    execute_runner(
+        tmp_path / 'dir2' / 'derived1.pyz',
+        ['--layers', './layer1.ini', '--derive', './dir2/derived2.pyz', '--qemu-dir', tmp_path / 'dir2' / 'some-path'],
+        cwd=tmp_path
+    )
+
+    cmdline = capture_runner_cmdline(tmp_path / 'dir2' / 'derived2.pyz', 'abc.elf')
 
     assert cmdline[0] == engine
 

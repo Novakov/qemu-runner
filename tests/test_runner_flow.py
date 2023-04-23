@@ -6,7 +6,7 @@ from typing import Optional, Union, Sequence, List
 
 import pytest
 
-from .test_utllities import place_echo_args, with_env
+from .test_utllities import place_echo_args, with_env, with_cwd
 
 CmdlineArg = Union[str, os.PathLike]
 
@@ -49,12 +49,13 @@ def test_runner_flow(tmp_path: Path):
     engine = place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
 
     run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
-    cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
 
     assert cmdline == [
         engine,
         '-machine', 'virt_cortex_m,flash_kb=1024',
-        '-kernel', 'abc.elf',
+        '-kernel',  str(tmp_path / 'abc.elf'),
         '-append', 'arg1 arg2'
     ]
 
@@ -63,12 +64,13 @@ def test_runner_flow_no_args(tmp_path: Path):
     engine = place_echo_args(tmp_path / 'qemu' / 'qemu-system-arm')
 
     run_make_runner('-l', 'virt-cortex-m.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
-    cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf')
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf')
 
     assert cmdline == [
         engine,
         '-machine', 'virt_cortex_m,flash_kb=1024',
-        '-kernel', 'abc.elf',
+        '-kernel',  str(tmp_path / 'abc.elf'),
     ]
 
 
@@ -135,12 +137,14 @@ def test_extract_base_command_line_with_kernel(tmp_path: Path):
 
     run_make_runner('-l', 'virt-cortex-m.ini', 'my-layer.ini', '-o', tmp_path / 'test.pyz', cwd=tmp_path)
 
-    with with_env({'QEMU_DEV': 'my-qemu'}):
+    with with_env({'QEMU_DEV': 'my-qemu'}), with_cwd(tmp_path):
         cp = execute_runner(tmp_path / 'test.pyz', ['--debug', '--dry-run', 'abc.elf', 'a', 'b', 'c'])
 
-    assert cp.stdout.strip() == (
+    kernel_path = tmp_path / 'abc.elf'
+
+    assert cp.stdout.strip().replace("-kernel '", '-kernel ').replace("' -append", ' -append') == (
             "my-qemu -machine virt_cortex_m,flash_kb=1024 -device test_device,id=test_id,addr=12 " +
-            "-s -kernel abc.elf -append 'a b c'")
+            f"-s -kernel {kernel_path} -append 'a b c'")
 
 
 def test_extract_base_command_line_no_kernel(tmp_path: Path):
@@ -184,13 +188,14 @@ def test_derive_runner(tmp_path: Path):
         cwd=tmp_path
     )
 
-    cmdline = capture_runner_cmdline(tmp_path / 'derived.pyz', 'abc.elf')
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'derived.pyz', 'abc.elf')
 
     assert cmdline == [
         engine,
         '-device', 'test,id=d1',
         '-device', 'test,id=d2',
-        '-kernel', 'abc.elf',
+        '-kernel', str(tmp_path / 'abc.elf'),
     ]
 
 
@@ -293,7 +298,7 @@ def test_env_qemu_flags(tmp_path: Path):
         """)
 
     run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'runner.pyz', cwd=tmp_path)
-    with with_env({'QEMU_FLAGS': '-s -device test,id=2'}):
+    with with_env({'QEMU_FLAGS': '-s -device test,id=2'}), with_cwd(tmp_path):
         cmdline = capture_runner_cmdline(tmp_path / 'runner.pyz', 'abc.elf')
 
     assert cmdline == [
@@ -301,7 +306,7 @@ def test_env_qemu_flags(tmp_path: Path):
         '-s',
         '-device', 'test,id=2',
         '-machine', 'test',
-        '-kernel', 'abc.elf'
+        '-kernel', str(tmp_path / 'abc.elf')
     ]
 
 
@@ -318,7 +323,7 @@ def test_env_runner_flags(tmp_path: Path):
         """)
 
     run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'runner.pyz', cwd=tmp_path)
-    with with_env({'QEMU_RUNNER_FLAGS': '--halted --debug'}):
+    with with_env({'QEMU_RUNNER_FLAGS': '--halted --debug'}), with_cwd(tmp_path):
         cmdline = capture_runner_cmdline(tmp_path / 'runner.pyz', 'abc.elf')
 
     assert cmdline == [
@@ -326,7 +331,7 @@ def test_env_runner_flags(tmp_path: Path):
         '-machine', 'test',
         '-S',
         '-s',
-        '-kernel', 'abc.elf',
+        '-kernel', str(tmp_path / 'abc.elf')
     ]
 
 
@@ -377,3 +382,32 @@ def test_explicit_qemu_executable(tmp_path: Path) -> None:
     args = capture_runner_cmdline(tmp_path / 'test.pyz', '--qemu', engine, 'abc.elf')
 
     assert args[0] == engine
+
+
+def test_resolve_kernel_dir_to_absolute_path(tmp_path: Path) -> None:
+    engine = place_echo_args(tmp_path / 'qemu' / 'my-qemu')
+
+    with open(tmp_path / 'layer1.ini', 'w') as f:
+        f.write("""
+            [general]
+            engine = my-qemu
+
+            [machine]
+            @=test
+            
+            [device]
+            @=path
+            value=${KERNEL_DIR}/dir/file.bin
+            """)
+
+    run_make_runner('-l', './layer1.ini', '-o', tmp_path / 'runner.pyz', cwd=tmp_path)
+
+    with with_cwd(tmp_path):
+        args = capture_runner_cmdline(tmp_path / 'runner.pyz', 'kernel/abc.elf')
+
+    idx = args.index('-device')
+    resolved_arg = args[idx + 1]
+
+    file_bin = tmp_path / 'kernel' / 'dir' / 'file.bin'
+
+    assert resolved_arg.replace('\\', '/') == f'path,value={file_bin}'.replace('\\', '/')

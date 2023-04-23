@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import List, Optional
 
 
+def make_path_absolute(v: str) -> str:
+    return os.path.abspath(v)
+
 def make_arg_parser():
     parser = argparse.ArgumentParser()
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
@@ -61,7 +64,7 @@ still use QEMU search rules from base QEMU runner.
 
     program_args = parser.add_argument_group('Program arguments')
     program_args.add_argument('--dry-run', action='store_true', help='Do not execute QEMU, just output command line')
-    program_args.add_argument('kernel', help='Executable to run under QEMU', nargs='?')
+    program_args.add_argument('kernel', help='Executable to run under QEMU', nargs='?', type=make_path_absolute)
     program_args.add_argument('arguments', nargs=argparse.REMAINDER, help='Arguments passed to executable', default=[])
 
     return parser

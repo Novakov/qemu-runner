@@ -51,6 +51,7 @@ class Layer:
                 halted=other.halted if other.halted is not None else self._general.halted,
                 gdb=other.gdb if other.gdb is not None else self._general.gdb,
                 gdb_dev=other.gdb_dev if other.gdb_dev is not None else self._general.gdb_dev,
+                memory=other.memory if other.memory is not None else self._general.memory
             )
 
         def apply_arguments() -> Iterable[Argument]:
@@ -152,6 +153,9 @@ def parse_layer(config_parser: ConfigParser) -> Layer:
 
         if 'halted' in section:
             result = replace(result, halted=config_parser.getboolean('general', 'halted'))
+
+        if 'memory' in section:
+            result = replace(result, memory=section['memory'])
 
         return result
 

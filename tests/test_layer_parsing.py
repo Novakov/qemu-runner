@@ -17,6 +17,13 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
     (
             """
             [general]
+            memory = 128M
+            """,
+            Layer(general=GeneralSettings(memory='128M'))
+    ),
+    (
+            """
+            [general]
             engine = my-engine
             kernel = my-kernel.elf
             cmdline = a b c

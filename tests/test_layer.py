@@ -41,6 +41,21 @@ LAYER_APPLY_CASES = [
         Layer(GeneralSettings(engine='e2', kernel='k2', kernel_cmdline='c1 c2', halted=True, gdb=True, gdb_dev='gdb2')),
     ),
     (
+        Layer(GeneralSettings(memory='12')),
+        Layer(GeneralSettings()),
+        Layer(GeneralSettings(memory='12')),
+    ),
+    (
+        Layer(GeneralSettings(memory='12')),
+        Layer(GeneralSettings(memory='24')),
+        Layer(GeneralSettings(memory='24')),
+    ),
+    (
+        Layer(GeneralSettings()),
+        Layer(GeneralSettings(memory='24')),
+        Layer(GeneralSettings(memory='24')),
+    ),
+    (
         Layer(MY_ENGINE, [Argument('device', 'd1', {'id': 'id1', 'p': 'a'})]),
         Layer(MY_ENGINE, [Argument('chardev', 'c1', {'id': 'id2', 'b': 'a'})]),
         Layer(MY_ENGINE, [

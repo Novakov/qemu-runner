@@ -3,14 +3,20 @@ from configparser import ConfigParser
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import List, Sequence, Dict, Protocol, Optional, Iterable
+from enum import IntEnum
 
 from .argument import Argument, ArgumentValue, build_command_line_for_argument
 from .variable_resolution import VariableResolver, resolve_no_variables, append_resolver, make_resolver_from_dict
 
 
+class Mode(IntEnum):
+    System = 0
+    User = 1
+
 @dataclass(frozen=True)
 class GeneralSettings:
     engine: str = ''
+    mode: Optional[Mode] = None
     kernel: Optional[str] = None
     kernel_cmdline: Optional[str] = None
     halted: Optional[bool] = None
@@ -46,12 +52,13 @@ class Layer:
             return replace(
                 self._general,
                 engine=other.engine if other.engine != '' else self._general.engine,
+                mode=other.mode if other.mode else None,
                 kernel=other.kernel if other.kernel != '' else self._general.kernel,
                 kernel_cmdline=' '.join(cmdline) if cmdline else None,
                 halted=other.halted if other.halted is not None else self._general.halted,
                 gdb=other.gdb if other.gdb is not None else self._general.gdb,
                 gdb_dev=other.gdb_dev if other.gdb_dev is not None else self._general.gdb_dev,
-                memory=other.memory if other.memory is not None else self._general.memory
+                memory=other.memory if other.memory is not None else self._general.memory,
             )
 
         def apply_arguments() -> Iterable[Argument]:
@@ -157,6 +164,13 @@ def parse_layer(config_parser: ConfigParser) -> Layer:
         if 'memory' in section:
             result = replace(result, memory=section['memory'])
 
+        if 'mode' in section:
+            mode = section['mode']
+            if mode != 'system' and mode != 'user':
+                raise Exception('Possible mode values: system, user')
+            result = replace(result, mode=Mode[mode.capitalize()])
+
+
         return result
 
     return Layer(
@@ -215,7 +229,8 @@ def build_command_line(
                 yield '-s'
 
         if layer.general.kernel:
-            yield '-kernel'
+            if not layer.general.mode or layer.general.mode == Mode.System:
+                yield '-kernel'
             yield layer.general.kernel
 
         if layer.general.kernel_cmdline:

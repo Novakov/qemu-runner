@@ -3,7 +3,7 @@ from configparser import ConfigParser
 import pytest
 
 from qemu_runner.argument import Argument
-from qemu_runner.layer import Layer, GeneralSettings, parse_layer
+from qemu_runner.layer import Layer, GeneralSettings, parse_layer, Mode
 
 
 @pytest.mark.parametrize(('text', 'expected'), [
@@ -29,6 +29,15 @@ from qemu_runner.layer import Layer, GeneralSettings, parse_layer
             cmdline = a b c
             """,
             Layer(general=GeneralSettings(engine='my-engine', kernel='my-kernel.elf', kernel_cmdline='a b c'))
+    ),
+    (
+            """
+            [general]
+            engine = my-engine
+            kernel = my-kernel.elf
+            mode = user
+            """,
+            Layer(general=GeneralSettings(engine='my-engine', kernel='my-kernel.elf', mode=Mode.User))
     ),
     (
             """

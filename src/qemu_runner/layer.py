@@ -52,7 +52,7 @@ class Layer:
             return replace(
                 self._general,
                 engine=other.engine if other.engine != '' else self._general.engine,
-                mode=other.mode if other.mode else None,
+                mode=other.mode if other.mode is not None else self._general.mode,
                 kernel=other.kernel if other.kernel != '' else self._general.kernel,
                 kernel_cmdline=' '.join(cmdline) if cmdline else None,
                 halted=other.halted if other.halted is not None else self._general.halted,

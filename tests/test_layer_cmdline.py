@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from qemu_runner.argument import Argument
-from qemu_runner.layer import Layer, build_command_line, GeneralSettings
+from qemu_runner.layer import Layer, build_command_line, GeneralSettings, Mode
 
 MY_ENGINE = GeneralSettings(engine='my-engine')
 
@@ -37,6 +37,10 @@ MY_ENGINE = GeneralSettings(engine='my-engine')
     (
         Layer(GeneralSettings(engine='my-engine', kernel='abc.elf')),
         ['my-engine', '-kernel', 'abc.elf']
+    ),
+    (
+        Layer(GeneralSettings(engine='my-engine', kernel='abc.elf', mode=Mode.User)),
+        ['my-engine', 'abc.elf']
     ),
     (
         Layer(GeneralSettings(engine='my-engine', kernel='abc.elf', kernel_cmdline='a b c')),

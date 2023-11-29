@@ -6,7 +6,7 @@ on:
 
 jobs:
   tests:
-    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags')
+    if: (github.event_name == 'push' || github.event_name == 'pull_request') && !startsWith(github.ref, 'refs/tags')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

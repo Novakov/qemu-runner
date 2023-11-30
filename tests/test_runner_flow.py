@@ -91,6 +91,76 @@ def test_runner_flow_no_args(tmp_path: Path, test_layer: Path):
         '-kernel',  str(tmp_path / 'abc.elf'),
     ]
 
+@pytest.fixture()
+def test_user_mode_layer(tmp_path: Path) -> Path:
+    with open(tmp_path / 'test-layer', 'w') as f:
+        f.write("""
+        [general]
+        engine = qemu-aarch64
+        mode = user
+        
+        [L]
+        @ = /some/path
+        """)
+
+    return tmp_path / 'test-layer'
+
+
+def test_runner_flow_user_mode(tmp_path: Path, test_user_mode_layer: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'qemu-aarch64')
+
+    run_make_runner('-l', test_user_mode_layer, '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', 'arg2')
+
+    assert cmdline == [
+        engine,
+        '-L', '/some/path',
+        str(tmp_path / 'abc.elf'),
+        'arg1', 'arg2'
+    ]
+
+def test_runner_flow_user_mode_double_quoted_args(tmp_path: Path, test_user_mode_layer: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'qemu-aarch64')
+
+    run_make_runner('-l', test_user_mode_layer, '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', '"arg2 arg3"', 'arg4')
+
+    assert cmdline == [
+        engine,
+        '-L', '/some/path',
+        str(tmp_path / 'abc.elf'),
+        'arg1', 'arg2 arg3', 'arg4'
+    ]
+
+def test_runner_flow_user_mode_single_quoted_args(tmp_path: Path, test_user_mode_layer: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'qemu-aarch64')
+
+    run_make_runner('-l', test_user_mode_layer, '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf', 'arg1', '\'arg2 arg3\'', 'arg4')
+
+    assert cmdline == [
+        engine,
+        '-L', '/some/path',
+        str(tmp_path / 'abc.elf'),
+        'arg1', 'arg2 arg3', 'arg4'
+    ]
+
+def test_runner_flow_no_args(tmp_path: Path, test_user_mode_layer: Path):
+    engine = place_echo_args(tmp_path / 'qemu' / 'qemu-aarch64')
+
+    run_make_runner('-l', test_user_mode_layer, '-o', tmp_path / 'test.pyz', cwd=tmp_path)
+    with with_cwd(tmp_path):
+        cmdline = capture_runner_cmdline(tmp_path / 'test.pyz', 'abc.elf')
+
+    assert cmdline == [
+        engine,
+        '-L', '/some/path',
+        str(tmp_path / 'abc.elf')
+    ]
+
 
 def assert_arg_set_in_cmdline(arg_set: List[str], cmdline: List[str]):
     if len(arg_set) == 1:

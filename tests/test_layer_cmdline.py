@@ -47,6 +47,18 @@ MY_ENGINE = GeneralSettings(engine='my-engine')
         ['my-engine', '-kernel', 'abc.elf', '-append', 'a b c']
     ),
     (
+        Layer(GeneralSettings(engine='my-engine', kernel='abc.elf', mode=Mode.User, kernel_cmdline='a b c')),
+        ['my-engine', 'abc.elf', 'a', 'b', 'c']
+    ),
+    (
+        Layer(GeneralSettings(engine='my-engine', kernel='abc.elf', mode=Mode.User, kernel_cmdline='a "b c d" e')),
+        ['my-engine', 'abc.elf', 'a', 'b c d', 'e']
+    ),
+    (
+        Layer(GeneralSettings(engine='my-engine', kernel='abc.elf', mode=Mode.User, kernel_cmdline='a \'b c d\' e')),
+        ['my-engine', 'abc.elf', 'a', 'b c d', 'e']
+    ),
+    (
         Layer(
             GeneralSettings(engine='my-engine', halted=True, gdb=True, kernel='abc.elf', kernel_cmdline='a b c'),
             [Argument('device', 'val1', {'id': 'id1', 'path': 'path1'})]

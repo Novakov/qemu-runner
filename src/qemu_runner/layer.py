@@ -1,4 +1,5 @@
-import os.path
+import os.path 
+import re
 from configparser import ConfigParser
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -234,7 +235,13 @@ def build_command_line(
             yield layer.general.kernel
 
         if layer.general.kernel_cmdline:
-            yield '-append'
-            yield layer.general.kernel_cmdline
+            if not layer.general.mode or layer.general.mode == Mode.System:
+                yield '-append'
+                yield layer.general.kernel_cmdline
+            else:
+                pattern = re.compile(r"\"[^\"]*\"|\'[^\']*\'|\S+")
+                args = pattern.findall(layer.general.kernel_cmdline)
+                for arg in args:
+                    yield arg.strip('"\'')
 
     return list(_yield_args())

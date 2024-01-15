@@ -28,20 +28,7 @@ def install_script(builder: venv.EnvBuilder, context, name, url):
 
 
 def install_setuptools(builder: venv.EnvBuilder, context):
-    """
-    Install setuptools in the virtual environment.
-
-    :param context: The information for the virtual environment
-                    creation request being processed.
-    """
-    url = 'https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py'
-    install_script(builder, context, 'setuptools', url)
-    # clear up the setuptools archive which gets downloaded
-    pred = lambda o: o.startswith('setuptools-') and o.endswith('.tar.gz')
-    files = filter(pred, os.listdir(context.bin_path))
-    for f in files:
-        f = os.path.join(context.bin_path, f)
-        os.unlink(f)
+   subprocess.run([context.env_exe, '-m', 'pip', 'install', 'setuptools'], check=True)
 
 
 @pytest.fixture()
@@ -56,7 +43,7 @@ def create_venv(venv_dir: Path):
     ctx = builder.ensure_directories(venv_dir)
     # builder.create_configuration(ctx)
     # builder.setup_python(ctx)
-    # install_setuptools(builder, ctx)
+    install_setuptools(builder, ctx)
     return Path(ctx.env_exe)
 
 

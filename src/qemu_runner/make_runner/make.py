@@ -6,7 +6,6 @@ import zipfile
 import zipimport
 from pathlib import Path
 from typing import IO, List, Any
-import pkg_resources
 
 from qemu_runner.layer_locator import load_layer
 import qemu_runner
@@ -19,9 +18,20 @@ __all__ = [
 
 def load_layers_from_all_search_paths(layer_names: List[str]) -> List[str]:
     packages = ['qemu_runner']
-    for ep in pkg_resources.iter_entry_points('qemu_runner_layer_packages'):
-        ep: pkg_resources.EntryPoint
-        packages.append(ep.module_name)
+    try:
+        import pkg_resources
+        for ep in pkg_resources.iter_entry_points('qemu_runner_layer_packages'):
+            ep: pkg_resources.EntryPoint
+            packages.append(ep.module_name)
+
+        return [load_layer(layer, packages=packages) for layer in layer_names]
+    except ImportError:
+        import importlib.metadata
+
+        eps = importlib.metadata.entry_points(group='qemu_runner_layer_packages')
+
+        for ep in eps:
+            packages.append(ep.module_name)
 
     return [load_layer(layer, packages=packages) for layer in layer_names]
 

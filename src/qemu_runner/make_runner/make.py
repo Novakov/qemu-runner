@@ -31,7 +31,10 @@ def load_layers_from_all_search_paths(layer_names: List[str]) -> List[str]:
         eps = importlib.metadata.entry_points(group='qemu_runner_layer_packages')
 
         for ep in eps:
-            packages.append(ep.module_name)
+            module_name = getattr(ep, 'module', None)
+            if module_name is None:
+                module_name = ep.module_name
+            packages.append(module_name)
 
     return [load_layer(layer, packages=packages) for layer in layer_names]
 

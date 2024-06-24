@@ -27,10 +27,6 @@ def install_script(builder: venv.EnvBuilder, context, name, url):
     os.unlink(distpath)
 
 
-def install_setuptools(builder: venv.EnvBuilder, context):
-   subprocess.run([context.env_exe, '-m', 'pip', 'install', 'setuptools'], check=True)
-
-
 @pytest.fixture()
 def venv_py(tmp_path: Path) -> Path:
     venv_dir = tmp_path / 'venv'
@@ -41,9 +37,6 @@ def create_venv(venv_dir: Path):
     builder = venv.EnvBuilder(with_pip=True)
     builder.create(venv_dir)
     ctx = builder.ensure_directories(venv_dir)
-    # builder.create_configuration(ctx)
-    # builder.setup_python(ctx)
-    install_setuptools(builder, ctx)
     return Path(ctx.env_exe)
 
 
@@ -64,12 +57,8 @@ def make_runner(python: Path, args: List[str], cwd: Path):
 
 
 def install_dev_package(python: Path, pkg: Path):
-    cp = subprocess.run([
-        python,
-        pkg / 'setup.py',
-        '-q',
-        'install'
-    ],
+    cp = subprocess.run(
+        [python, '-m', 'pip', 'install', '-q', pkg],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         encoding='utf-8',
